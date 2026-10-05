@@ -61,10 +61,14 @@
     ['A room without books is like a body without a soul.', 'Cicero'],
   ];
 
+  // Open Library covers take ~3s (two redirects into archive.org). Serve them through a caching image CDN
+  // as small WebP, and fall back to the original URL if the CDN fails.
+  const fast = (u, w = 240) => (/covers\.openlibrary\.org|books\.google/.test(u || '') ? `https://wsrv.nl/?url=${encodeURIComponent(u)}&w=${w}&output=webp&q=80` : u);
+  const FALLBACK = 'if(this.dataset.o&&this.src!==this.dataset.o){this.src=this.dataset.o}else{';
   const cover = (b, size = '') => {
     const spine = `<span class="spine"${b.cover_url ? ' hidden' : ''}><span>${esc(b.title)}</span><small>${esc(b.author)}</small></span>`;
     const img = b.cover_url
-      ? `<img loading="lazy" alt="" src="${esc(b.cover_url)}" onload="if(this.naturalWidth<5){this.onerror()}else{this.classList.add('ld')}" onerror="this.previousElementSibling.hidden=false;this.remove()">`
+      ? `<img loading="lazy" decoding="async" alt="" src="${esc(fast(b.cover_url))}" data-o="${esc(b.cover_url)}" onload="if(this.naturalWidth<5){this.onerror()}else{this.classList.add('ld')}" onerror="${FALLBACK}this.previousElementSibling.hidden=false;this.remove()}">`
       : '';
     return `<span class="cov ${size}">${spine}${img}</span>`;
   };
@@ -166,7 +170,7 @@
     $('#avatar').textContent = (S.user ? (S.user.email || 'H') : name())[0].toUpperCase();
     $('#avatar').setAttribute('aria-label', S.user ? 'Account and settings' : 'Owner login');
     $('#addBtn').hidden = !S.admin;
-    $('.hello').textContent = S.admin ? `Hi ${name()}. Check before you buy.` : 'Check before you buy.';
+    $('.hello').textContent = S.admin ? `Hi ${name()}. Check before you buy.` : `Browse ${name()}'s books, or buy one from the For sale shelf.`;
   }
 
   function renderSide() {
@@ -207,7 +211,7 @@
     if (!S.books.length) return `<h2>${hic('shelf')}Shelf</h2>${empty('The shelf is empty', S.admin ? 'Scan a barcode or add your first book.' : 'No books yet. Check back soon.', S.admin ? `<button class="primary" data-a="add">${ic('plus')}Add a book</button>` : '')}`;
     return `<h2>${hic('shelf')}Shelf <span>${S.books.length} book${S.books.length === 1 ? '' : 's'}</span></h2>
       <div class="filters" role="group" aria-label="Filter books">${chips}</div>
-      ${list.length ? `<div class="shelf">${list.map((b, i) => `<button class="book" style="--i:${i}" data-a="open" data-id="${b.id}" aria-label="${esc(b.title)}${b.is_lent ? ', lent out' : ''}">${b.is_lent ? `<span class="badge lent">${ic('out')}</span>` : b.status === 'read' ? `<span class="badge read">${ic('check')}</span>` : b.status === 'reading' ? `<span class="badge reading">${ic('book')}</span>` : ''}${cover(b)}</button>`).join('')}${S.filter === 'all' ? `<div class="decor" aria-hidden="true">${PLANT}</div>` : ''}</div>
+      ${list.length ? `<div class="shelf">${list.map((b, i) => `<button class="book" style="--i:${i}" data-a="open" data-id="${b.id}" title="${esc(b.title)}" aria-label="${esc(b.title)}${b.is_lent ? ', lent out' : ''}">${b.is_lent ? `<span class="badge lent">${ic('out')}</span>` : b.status === 'read' ? `<span class="badge read">${ic('check')}</span>` : b.status === 'reading' ? `<span class="badge reading">${ic('book')}</span>` : ''}${cover(b)}</button>`).join('')}${S.filter === 'all' ? `<div class="decor" aria-hidden="true">${PLANT}</div>` : ''}</div>
       <div class="legend"><span><i style="background:var(--ok)"></i>Read</span><span><i style="background:var(--accent)"></i>Reading</span><span><i style="background:var(--warn)"></i>Lent out</span></div>`
         : empty('Nothing here', 'No books match this filter.')}`;
   }
@@ -278,8 +282,10 @@
     if (!q) { box.innerHTML = ''; return; }
     const tok = q.split(' ');
     const hit = (b) => tok.every((t) => norm(`${b.title} ${b.author} ${b.series || ''} ${b.isbn || ''}`).includes(t));
-    const own = S.books.filter(hit).slice(0, 4), wish = S.wish.filter(hit).slice(0, 2), sale = S.sales.filter((s) => s.status !== 'sold' && hit(s)).slice(0, 2);
-    let h = own.map((b) => `<button class="verdict own" data-a="open" data-id="${b.id}">${cover(b, 'sm')}<span class="grow"><span class="head">${ic('check')} ${S.admin ? 'You own this' : `${esc(name())} has this`}</span>${esc(b.title)}<small>${esc(seriesLine(b))}${b.is_lent ? ' · lent out' : ''}</small></span></button>`).join('');
+    const allOwn = S.books.filter(hit);
+    const own = allOwn.slice(0, 6), wish = S.wish.filter(hit).slice(0, 2), sale = S.sales.filter((s) => s.status !== 'sold' && hit(s)).slice(0, 2);
+    let h = allOwn.length > 1 ? `<p class="more">${allOwn.length} matches${allOwn.length > own.length ? `, showing ${own.length}. Type more to narrow it down.` : ''}</p>` : '';
+    h += own.map((b) => `<button class="verdict own" data-a="open" data-id="${b.id}">${cover(b, 'sm')}<span class="grow"><span class="head">${ic('check')} ${S.admin ? 'You own this' : `${esc(name())} has this`}</span>${esc(b.title)}<small>${esc(seriesLine(b))}${b.is_lent ? ' · lent out' : ''}</small></span></button>`).join('');
     h += wish.map((w) => `<div class="verdict wish">${cover(w, 'sm')}<span class="grow"><span class="head">${ic('wish')} Not owned, on your wishlist</span>${esc(w.title)}<small>${esc(seriesLine(w))}${fillsGap(w) ? ' · fills a gap' : ''}</small></span></div>`).join('');
     h += sale.map((s) => `<button class="verdict sale" data-a="tab" data-tab="sale">${cover(s, 'sm')}<span class="grow"><span class="head">${ic('sale')} For sale · ${esc(price(s.price))}</span>${esc(s.title)}<small>${esc(cap(s.condition))}</small></span></button>`).join('');
     if (!own.length && !wish.length) h = `<div class="verdict no"><span class="bag">${ic('bag')}</span><span class="grow"><span class="head">Not in the library</span><small>Nothing matches "${esc(S.q)}". ${S.admin ? 'Safe to buy.' : ''}</small></span>${S.admin ? `<button class="ghost" data-a="add" data-q="${esc(S.q)}">Add it</button>` : ''}</div>` + h;
@@ -287,10 +293,15 @@
   }
 
   // ---------- sheet ----------
-  let lastFocus = null;
+  // Opening a sheet adds a history entry, so the phone's Back button closes it instead of leaving the site.
+  let lastFocus = null, sheetEntry = false, popPending = false, afterPop = [];
   const closeBtn = `<button class="close" data-a="close" aria-label="Close">${ic('x')}</button>`;
   function sheet(html) {
-    if (!document.body.classList.contains('open')) lastFocus = document.activeElement;
+    if (!document.body.classList.contains('open')) {
+      lastFocus = document.activeElement;
+      history.pushState({ sheet: true }, '');
+      sheetEntry = true;
+    }
     $('#sheet').innerHTML = `<div class="grab"></div>${html}`;
     document.body.classList.add('open');
     setTimeout(() => ($('#sheet [autofocus]') || $('#sheet .close'))?.focus({ preventScroll: true }), 50);
@@ -299,7 +310,22 @@
     stopScanner();
     document.body.classList.remove('open');
     lastFocus?.focus?.({ preventScroll: true });
+    if (sheetEntry) { sheetEntry = false; popPending = true; history.back(); }
   }
+  // Run after any pending history.back() from closeSheet has landed, so hash updates aren't undone.
+  const setHash = (tab) => { const f = () => history.replaceState(null, '', `#${tab}`); popPending ? afterPop.push(f) : f(); };
+  window.addEventListener('popstate', () => {
+    if (popPending) { popPending = false; afterPop.splice(0).forEach((f) => f()); return; }
+    if (document.body.classList.contains('open')) { sheetEntry = false; closeSheet(); }
+  });
+  // Keep keyboard focus inside an open sheet
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Tab' || !document.body.classList.contains('open')) return;
+    const f = [...$('#sheet').querySelectorAll('button, a[href], input, select, textarea')].filter((el) => !el.disabled && el.offsetParent);
+    if (!f.length) return;
+    if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+    else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+  });
 
   function openBook(id) {
     const b = findBook(id); if (!b) return;
@@ -307,7 +333,10 @@
     const head = `<div class="sheet-head"><span></span>${closeBtn}</div>
       <div class="detail">${S.admin ? `<button class="cov-edit" data-a="cover" data-id="${b.id}" aria-label="Change cover">${cover(b, 'lg')}<span class="cov-badge">${ic('image')}</span></button>` : cover(b, 'lg')}<div class="grow"><h3 id="sheetTitle">${esc(b.title)}</h3><p>${esc(b.author)}</p><p>${b.series ? `Book ${b.series_no || '?'}${b.series_total ? ` of ${b.series_total}` : ''} · ${esc(b.series)}` : 'Standalone'}</p></div></div>`;
     if (!S.admin) {
-      sheet(`${head}<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">${b.is_lent ? '<span class="pill warn">Lent out</span>' : '<span class="pill ok">On the shelf</span>'}<span class="pill lav">${cap(b.status)}</span>${b.rating ? stars(b.rating) : ''}</div>`);
+      const digits = (S.settings.whatsapp || '').replace(/\D/g, '');
+      const borrow = digits && !b.is_lent
+        ? `<a class="primary wa" style="margin-top:18px" href="https://wa.me/${digits}?text=${encodeURIComponent(`Hi ${name()}! Could I borrow "${b.title}"?`)}" target="_blank" rel="noopener">${ic('chat')}Ask to borrow on WhatsApp</a>` : '';
+      sheet(`${head}<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">${b.is_lent ? `<span class="pill warn">${ic('out')}Lent out</span>` : `<span class="pill ok">${ic('check')}On the shelf</span>`}<span class="pill lav">${cap(b.status)}</span>${b.rating ? stars(b.rating) : ''}</div>${borrow}`);
       return;
     }
     sheet(`${head}
@@ -434,7 +463,7 @@
     if (F.mode === 'add') log({ books: `Added ${row.title}`, wishlist: `Added ${row.title} to the wishlist`, sales: `Listed ${row.title} for sale` }[F.table], row.cover_url);
     const msg = F.mode === 'edit' ? 'Saved' : { books: `Added ${row.title} to your library`, wishlist: `Added ${row.title} to your wishlist`, sales: `Listed ${row.title} for sale` }[F.table];
     const goTab = F.mode === 'add' ? { books: 'shelf', wishlist: 'wish', sales: 'sale' }[F.table] : S.tab;
-    closeSheet(); S.tab = goTab; history.replaceState(null, '', `#${goTab}`);
+    closeSheet(); S.tab = goTab; setHash(goTab);
     await load(); toast(msg);
   }
 
@@ -472,7 +501,7 @@
     const opts = await coverOptions(title, author);
     if (!el.isConnected) return;
     $('#cpmsg').textContent = opts.length ? 'Tap the one that matches your copy.' : 'No covers found online. Upload a photo of your copy instead.';
-    $('#cpgrid').innerHTML = opts.map((u) => `<button type="button" class="cp-opt" data-a="cp-pick" data-u="${esc(u)}" aria-pressed="${u === current}"><img loading="lazy" alt="Cover option" src="${esc(u)}" onload="if(this.naturalWidth<5)this.parentNode.remove()" onerror="this.parentNode.remove()"></button>`).join('');
+    $('#cpgrid').innerHTML = opts.map((u) => `<button type="button" class="cp-opt" data-a="cp-pick" data-u="${esc(u)}" aria-pressed="${u === current}"><img loading="lazy" decoding="async" alt="Cover option" src="${esc(fast(u, 200))}" data-o="${esc(u)}" onload="if(this.naturalWidth<5)this.parentNode.remove()" onerror="${FALLBACK}this.parentNode.remove()}"></button>`).join('');
   }
 
   async function resizeImage(file, maxW = 600) {
@@ -598,7 +627,7 @@
 
   // ---------- actions ----------
   const A = {
-    tab: (t) => { S.tab = t.dataset.tab; history.replaceState(null, '', `#${S.tab}`); renderNav(); renderView(); if (window.innerWidth < 960) window.scrollTo({ top: $('#main').getBoundingClientRect().top + window.scrollY - $('.finderbar').offsetHeight - 8, behavior: 'smooth' }); },
+    tab: (t) => { S.tab = t.dataset.tab; setHash(S.tab); renderNav(); renderView(); if (window.innerWidth < 768) window.scrollTo({ top: $('#main').getBoundingClientRect().top + window.scrollY - $('.finderbar').offsetHeight - 8, behavior: 'smooth' }); },
     filter: (t) => { S.filter = t.dataset.f; renderView(); },
     open: (t) => openBook(t.dataset.id),
     close: () => closeSheet(),

@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%237356a0'/%3E%3Cpath d='M9 8h5a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H9zM23 8h-5a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h6z' fill='none' stroke='%23fbf6ee' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preconnect" href="https://covers.openlibrary.org">
+<link rel="preconnect" href="https://wsrv.nl">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Crimson+Pro:wght@400;500;600;700&family=Caveat:wght@500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css">
 </head>
@@ -39,9 +39,9 @@
     <div class="search" role="search">
       <span class="muted" aria-hidden="true"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
       <label for="q" class="sr">Search the library</label>
-      <input id="q" type="search" placeholder="Title, author or series" autocomplete="off">
+      <input id="q" type="search" placeholder="Title or author" autocomplete="off" enterkeyhint="search">
       <button class="scanbtn" id="scanBtn" aria-label="Scan a barcode">
-        <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M8 7v10M12 7v10M16 7v10"/></svg>Scan
+        <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M8 7v10M12 7v10M16 7v10"/></svg><span class="lbl-scan">Scan</span>
       </button>
     </div>
     <div class="results" id="results" aria-live="polite"></div>
