@@ -1,0 +1,367 @@
+<title>Helli's Library Designs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Calistoga&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Cormorant+Garamond:wght@600;700&family=Crimson+Pro:wght@400;500;600&family=Caveat:wght@500;600&family=Cinzel:wght@500;600;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:#e9e6e1; color:#1f1d1a; font-family:'Plus Jakarta Sans',sans-serif; padding:32px 16px 64px; }
+  .intro { max-width:1220px; margin:0 auto 28px; }
+  .intro h1 { font-family:'Calistoga',serif; font-weight:400; font-size:30px; }
+  .intro p { color:#57534e; margin-top:6px; max-width:680px; line-height:1.5; }
+  .intro ul { margin-top:10px; padding-left:18px; color:#57534e; font-size:14px; line-height:1.7; }
+  .row { display:flex; gap:28px; justify-content:center; flex-wrap:wrap; }
+  .option { width:390px; max-width:100%; }
+  .label { font-weight:700; font-size:18px; }
+  .sub { font-size:13px; color:#57534e; margin:2px 0 4px; }
+  .fonts { font-size:12px; color:#78716c; margin-bottom:12px; }
+  .phone { border-radius:44px; padding:11px; background:#121212; box-shadow:0 24px 60px rgba(0,0,0,.2); }
+
+  /* ---------- App shell (themed via tokens) ---------- */
+  .app { position:relative; height:800px; border-radius:34px; overflow:hidden; background:var(--bg); color:var(--text); font-family:var(--body); font-size:15px; }
+  .scroll { height:100%; overflow-y:auto; padding:22px 18px 104px; scrollbar-width:none; }
+  .scroll::-webkit-scrollbar { display:none; }
+  button { font:inherit; color:inherit; background:none; border:0; cursor:pointer; touch-action:manipulation; }
+  button:focus-visible, input:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  svg.i { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none; }
+
+  .top { display:flex; justify-content:space-between; align-items:center; }
+  .brand { font-family:var(--display); font-weight:var(--display-w); font-size:var(--brand-size); color:var(--title); letter-spacing:var(--ls); line-height:1.1; }
+  .avatar { width:40px; height:40px; border-radius:50%; background:var(--accent); color:var(--on-accent); display:grid; place-items:center; font-weight:700; }
+  .hello { color:var(--muted); font-size:14px; margin:4px 0 16px; }
+
+  .search { display:flex; align-items:center; gap:8px; background:var(--card); border:1.5px solid var(--line-strong); border-radius:var(--r); padding:4px 4px 4px 14px; transition:border-color .2s, box-shadow .2s; }
+  .search:focus-within { border-color:var(--accent); box-shadow:0 0 0 4px var(--ring); }
+  .search input { flex:1; min-width:0; border:0; outline:0; background:transparent; color:var(--text); font:inherit; font-size:16px; height:44px; }
+  .search input::placeholder { color:var(--muted); }
+  .scanbtn { display:flex; align-items:center; gap:6px; height:44px; padding:0 14px; border-radius:calc(var(--r) - 4px); background:var(--accent); color:var(--on-accent); font-weight:700; font-size:14px; transition:transform .15s; }
+  .scanbtn:active, .press:active { transform:scale(.96); }
+
+  .results { display:grid; gap:8px; margin-top:10px; }
+  .verdict { display:flex; gap:12px; text-align:left; width:100%; align-items:center; padding:12px; border-radius:var(--r); animation:rise .28s ease-out both; }
+  .verdict.own { background:var(--ok-bg); border:1px solid var(--ok-line); }
+  .verdict.no { background:var(--card); border:1px dashed var(--line-strong); }
+  .verdict.wish { background:var(--wish-bg); border:1px solid var(--wish-line); }
+  .verdict .head { display:flex; align-items:center; gap:6px; font-weight:700; }
+  .verdict.own .head { color:var(--ok); }
+  .verdict.wish .head { color:var(--wish); }
+  .verdict small { display:block; color:var(--muted); font-size:13px; margin-top:2px; }
+
+  .cov { position:relative; aspect-ratio:2/3; border-radius:3px 6px 6px 3px; overflow:hidden; background:var(--skeleton); box-shadow:var(--cover-shadow); flex:none; }
+  .cov img { width:100%; height:100%; object-fit:cover; display:block; opacity:0; transition:opacity .35s; }
+  .cov img.ld { opacity:1; }
+  .cov::after { content:''; position:absolute; inset:0; background:linear-gradient(90deg, rgba(0,0,0,.22), transparent 7%, transparent); pointer-events:none; }
+  .cov.sm { width:38px; }
+  .cov.md { width:52px; }
+
+  .stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:18px 0; }
+  .stat { background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:10px 6px; text-align:center; }
+  .stat b { display:block; font-family:var(--display); font-weight:var(--display-w); font-size:24px; color:var(--title); font-variant-numeric:lining-nums tabular-nums; }
+  .stat span { font-size:12px; color:var(--muted); }
+
+  .now { display:flex; gap:14px; align-items:center; background:var(--hero-bg); color:var(--hero-text); border-radius:var(--r); padding:14px; margin-bottom:18px; }
+  .now .k { font-size:12px; letter-spacing:.08em; text-transform:uppercase; opacity:.8; }
+  .now .t { font-family:var(--display); font-weight:var(--display-w); font-size:19px; margin:2px 0 8px; line-height:1.15; }
+  .bar { height:6px; border-radius:6px; background:var(--hero-track); overflow:hidden; }
+  .bar i { display:block; height:100%; background:var(--hero-fill); border-radius:6px; transform-origin:left; animation:grow .9s cubic-bezier(.2,.8,.2,1) both .2s; }
+  .now small { font-size:12px; opacity:.85; display:block; margin-top:6px; }
+
+  h2 { font-family:var(--display); font-weight:var(--display-w); font-size:20px; color:var(--title); letter-spacing:var(--ls); margin:4px 0 12px; display:flex; justify-content:space-between; align-items:baseline; }
+  h2 span { font-family:var(--body); font-size:13px; color:var(--muted); font-weight:400; letter-spacing:0; }
+
+  .shelf { display:grid; grid-template-columns:repeat(4,1fr); gap:14px 10px; padding:14px 10px 16px; background:var(--shelf-bg); border-radius:var(--r); border-bottom:var(--shelf-edge); }
+  .book { position:relative; text-align:left; animation:rise .4s cubic-bezier(.2,.8,.2,1) both; animation-delay:calc(var(--i) * 40ms); transition:transform .18s; }
+  .book:hover { transform:translateY(-3px); }
+  .badge { position:absolute; top:-6px; right:-6px; width:22px; height:22px; border-radius:50%; display:grid; place-items:center; border:2px solid var(--bg); z-index:1; }
+  .badge svg.i { width:12px; height:12px; stroke-width:3; }
+  .badge.read { background:var(--ok); color:#fff; }
+  .badge.lent { background:var(--warn); color:#fff; }
+  .badge.reading { background:var(--accent); color:var(--on-accent); }
+
+  .feed { display:grid; gap:2px; margin-top:20px; }
+  .ev { display:flex; gap:12px; align-items:center; padding:10px 0; border-bottom:1px solid var(--line); animation:rise .35s ease-out both; animation-delay:calc(var(--i) * 50ms); }
+  .ev p { font-size:14px; line-height:1.4; }
+  .ev time { font-size:12px; color:var(--muted); }
+
+  .series { background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:14px; margin-bottom:10px; animation:rise .35s ease-out both; animation-delay:calc(var(--i) * 60ms); }
+  .series .name { font-weight:700; display:flex; justify-content:space-between; gap:8px; }
+  .series .name span { font-weight:400; font-size:13px; color:var(--muted); white-space:nowrap; }
+  .slots { display:flex; gap:6px; margin-top:12px; }
+  .slot { flex:1; max-width:52px; }
+  .slot .miss { aspect-ratio:2/3; border:1.5px dashed var(--line-strong); border-radius:4px; display:grid; place-items:center; color:var(--muted); font-size:13px; font-weight:700; }
+  .slot .no { text-align:center; font-size:11px; color:var(--muted); margin-top:4px; }
+  .hint { font-size:13px; color:var(--warn); margin-top:10px; display:flex; gap:6px; align-items:center; }
+
+  .row-item { display:flex; gap:12px; align-items:center; background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:10px 12px; margin-bottom:8px; animation:rise .35s ease-out both; animation-delay:calc(var(--i) * 50ms); }
+  .row-item .t { font-weight:700; line-height:1.25; }
+  .row-item .a { font-size:13px; color:var(--muted); }
+  .row-item .act { margin-left:auto; }
+  .ghost { height:40px; padding:0 12px; border-radius:calc(var(--r) - 4px); border:1.5px solid var(--line-strong); font-size:13px; font-weight:700; white-space:nowrap; }
+  .ghost:hover { border-color:var(--accent); color:var(--accent); }
+
+  .nav { position:absolute; left:0; right:0; bottom:0; display:grid; grid-template-columns:repeat(4,1fr); padding:8px 8px 20px; background:var(--nav-bg); border-top:1px solid var(--line); backdrop-filter:blur(12px); z-index:5; }
+  .nav button { display:flex; flex-direction:column; align-items:center; gap:3px; min-height:48px; font-size:11px; font-weight:600; color:var(--muted); transition:color .2s; }
+  .nav button[aria-selected=true] { color:var(--accent); }
+  .nav button[aria-selected=true] svg { transform:translateY(-1px); }
+
+  .view { animation:fade .25s ease-out; }
+
+  /* sheets */
+  .scrim { position:absolute; inset:0; background:rgba(0,0,0,.5); opacity:0; pointer-events:none; transition:opacity .25s; z-index:10; }
+  .sheet { position:absolute; left:0; right:0; bottom:0; max-height:88%; overflow-y:auto; background:var(--sheet-bg); border-radius:24px 24px 0 0; padding:10px 20px 28px; transform:translateY(100%); transition:transform .32s cubic-bezier(.2,.8,.2,1); z-index:11; scrollbar-width:none; }
+  .open .scrim { opacity:1; pointer-events:auto; }
+  .open .sheet { transform:none; }
+  .grab { width:40px; height:5px; border-radius:5px; background:var(--line-strong); margin:0 auto 14px; }
+  .close { position:absolute; top:10px; right:12px; z-index:2; width:44px; height:44px; display:grid; place-items:center; color:var(--muted); }
+  .detail { display:flex; gap:16px; align-items:flex-end; margin-bottom:18px; }
+  .detail .cov { width:104px; }
+  .detail h3 { font-family:var(--display); font-weight:var(--display-w); font-size:24px; color:var(--title); line-height:1.1; }
+  .detail p { color:var(--muted); font-size:14px; margin-top:4px; }
+  .lbl { font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin:16px 0 8px; font-weight:700; }
+  .seg { display:grid; grid-template-columns:repeat(3,1fr); background:var(--seg-bg); border-radius:var(--r); padding:4px; }
+  .seg button { height:40px; border-radius:calc(var(--r) - 4px); font-weight:600; font-size:14px; color:var(--muted); transition:background .2s, color .2s; }
+  .seg button[aria-pressed=true] { background:var(--card); color:var(--text); box-shadow:0 1px 3px rgba(0,0,0,.12); }
+  .stars { display:flex; gap:2px; }
+  .stars button { width:44px; height:44px; display:grid; place-items:center; color:var(--line-strong); transition:transform .15s, color .15s; }
+  .stars button.on { color:var(--star); }
+  .stars button.on svg { fill:currentColor; }
+  .stars button:active { transform:scale(1.2); }
+  .lend { background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:12px; display:flex; gap:8px; align-items:center; }
+  .lend input { flex:1; min-width:0; height:44px; border:1.5px solid var(--line-strong); border-radius:calc(var(--r) - 4px); padding:0 12px; background:var(--bg); color:var(--text); font:inherit; font-size:16px; }
+  .note { font-family:var(--note); font-size:var(--note-size); color:var(--warn); flex:1; line-height:1.2; }
+  .primary { height:44px; padding:0 16px; border-radius:calc(var(--r) - 4px); background:var(--accent); color:var(--on-accent); font-weight:700; font-size:14px; white-space:nowrap; transition:transform .15s; }
+  .primary:active { transform:scale(.96); }
+
+  /* scanner */
+  .finder { position:relative; height:250px; margin-top:34px; border-radius:18px; overflow:hidden; background:radial-gradient(circle at 50% 40%, #3a3a3a, #111); display:grid; place-items:center; }
+  .finder .bc { width:150px; height:84px; background:repeating-linear-gradient(90deg,#eee 0 2px,transparent 2px 4px,#eee 4px 5px,transparent 5px 8px,#eee 8px 11px,transparent 11px 12px); opacity:.75; border-radius:2px; box-shadow:0 0 0 10px rgba(255,255,255,.75); }
+  .finder .frame { position:absolute; inset:46px 60px; border:3px solid transparent; border-image:linear-gradient(var(--accent),var(--accent)) 1; clip-path:polygon(0 0,22% 0,22% 3px,3px 3px,3px 22%,0 22%,0 78%,3px 78%,3px calc(100% - 3px),22% calc(100% - 3px),22% 100%,78% 100%,78% calc(100% - 3px),calc(100% - 3px) calc(100% - 3px),calc(100% - 3px) 78%,100% 78%,100% 22%,calc(100% - 3px) 22%,calc(100% - 3px) 3px,78% 3px,78% 0,100% 0,100% 100%,0 100%); }
+  .finder .laser { position:absolute; left:60px; right:60px; top:50%; height:2px; background:var(--accent); box-shadow:0 0 12px 2px var(--accent); animation:sweep 1.4s ease-in-out infinite alternate; }
+  .finder.done .laser { display:none; }
+  .finder.done .frame { border-image:linear-gradient(#22c55e,#22c55e) 1; }
+  .scanmsg { text-align:center; color:var(--muted); font-size:14px; margin:14px 0 4px; min-height:20px; }
+
+  .toast { position:absolute; left:16px; right:16px; bottom:92px; background:var(--toast-bg); color:var(--toast-text); border-radius:14px; padding:12px 14px; display:flex; align-items:center; gap:10px; font-size:14px; transform:translateY(20px); opacity:0; transition:transform .25s, opacity .25s; z-index:20; pointer-events:none; }
+  .toast.show { transform:none; opacity:1; pointer-events:auto; }
+  .toast button { margin-left:auto; font-weight:700; color:var(--toast-link); min-height:32px; }
+
+  @keyframes rise { from { opacity:0; transform:translateY(10px); } }
+  @keyframes fade { from { opacity:0; } }
+  @keyframes grow { from { transform:scaleX(0); } }
+  @keyframes sweep { from { transform:translateY(-60px); } to { transform:translateY(60px); } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; } }
+
+  /* ---------- A · Clean & Pink ---------- */
+  .A { --bg:#fff; --card:#fff; --sheet-bg:#fff; --text:#2b2230; --title:#2b1a2a; --muted:#6e6274; --line:#f0e4ea; --line-strong:#e2cdd7;
+       --accent:#be185d; --on-accent:#fff; --ring:#be185d22; --ok:#15803d; --ok-bg:#effaf2; --ok-line:#c9ecd3; --warn:#b45309; --wish:#7c3aed; --wish-bg:#f5f0ff; --wish-line:#e2d6fb; --star:#f59e0b;
+       --display:'Calistoga',serif; --display-w:400; --body:'Plus Jakarta Sans',sans-serif; --note:'Plus Jakarta Sans',sans-serif; --note-size:14px; --brand-size:28px; --ls:0;
+       --r:16px; --skeleton:#f6eef2; --cover-shadow:0 4px 10px rgba(80,20,50,.18); --shelf-bg:#fdf6f9; --shelf-edge:none; --seg-bg:#f7eff3; --nav-bg:rgba(255,255,255,.88);
+       --hero-bg:linear-gradient(135deg,#be185d,#9d174d); --hero-text:#fff; --hero-track:rgba(255,255,255,.3); --hero-fill:#fff; --toast-bg:#2b1a2a; --toast-text:#fff; --toast-link:#f9a8d4; }
+  /* ---------- B · Cozy Bookshop ---------- */
+  .B { --bg:#f4ead8; --card:#fbf4e6; --sheet-bg:#f8f0e0; --text:#3a281b; --title:#3f2414; --muted:#7a6250; --line:#e6d6bb; --line-strong:#cfb894;
+       --accent:#8a3b12; --on-accent:#fbf4e6; --ring:#8a3b1222; --ok:#4d6b1f; --ok-bg:#ecefd6; --ok-line:#d2dab0; --warn:#9a4a1c; --wish:#7b4b8a; --wish-bg:#f1e6ec; --wish-line:#e0cbd8; --star:#b7791f;
+       --display:'Cormorant Garamond',serif; --display-w:700; --body:'Crimson Pro',serif; --note:'Caveat',cursive; --note-size:22px; --brand-size:32px; --ls:0;
+       --r:8px; --skeleton:#e6d6bb; --cover-shadow:2px 4px 8px rgba(60,30,10,.3); --shelf-bg:linear-gradient(#e2c9a1,#d7ba8c); --shelf-edge:10px solid #7a4a22; --seg-bg:#eadcc3; --nav-bg:rgba(244,234,216,.92);
+       --hero-bg:#3f2414; --hero-text:#f4ead8; --hero-track:rgba(244,234,216,.25); --hero-fill:#e0a458; --toast-bg:#3f2414; --toast-text:#f4ead8; --toast-link:#e0a458; }
+  .B .app { font-size:17px; }
+  /* ---------- C · Dark Fantasy ---------- */
+  .C { --bg:#0e0c15; --card:#191624; --sheet-bg:#16131f; --text:#ebe6f5; --title:#e9cd84; --muted:#9a93b0; --line:#2a2540; --line-strong:#3d3659;
+       --accent:#d4af5a; --on-accent:#14111d; --ring:#d4af5a33; --ok:#6ee7a8; --ok-bg:#132a1f; --ok-line:#1f4a33; --warn:#f6ad6b; --wish:#c4a7ff; --wish-bg:#1f1834; --wish-line:#3a2d63; --star:#e9cd84;
+       --display:'Cinzel',serif; --display-w:600; --body:'Atkinson Hyperlegible',sans-serif; --note:'Atkinson Hyperlegible',sans-serif; --note-size:14px; --brand-size:24px; --ls:.04em;
+       --r:12px; --skeleton:#221d33; --cover-shadow:0 0 0 1px #d4af5a22, 0 6px 16px rgba(0,0,0,.6); --shelf-bg:linear-gradient(180deg,#171424,#1f1a30); --shelf-edge:2px solid #d4af5a55; --seg-bg:#211c30; --nav-bg:rgba(14,12,21,.88);
+       --hero-bg:linear-gradient(135deg,#2a2140,#1a1528); --hero-text:#ebe6f5; --hero-track:#3d3659; --hero-fill:linear-gradient(90deg,#b8923f,#e9cd84); --toast-bg:#e9cd84; --toast-text:#14111d; --toast-link:#5b21b6; }
+  .C .search:focus-within { box-shadow:0 0 0 4px var(--ring), 0 0 30px #d4af5a22; }
+  .C .now { border:1px solid #d4af5a44; }
+</style>
+<div class="intro">
+  <h1>Pick a direction</h1>
+  <p>All three are clickable prototypes running on the same features and your real books. Try these in each one:</p>
+  <ul>
+    <li>Type in the search box: <b>glass</b>, <b>lady midnight</b> or <b>dune</b></li>
+    <li>Tap <b>Scan</b> twice to see a book you own, then a book on your wishlist</li>
+    <li>Tap a cover to change read status, stars, or lend it to someone</li>
+    <li>Switch tabs; on Wishlist tap <b>Got it</b> and watch the series gap fill in</li>
+  </ul>
+</div>
+<div class="row" id="row"></div>
+
+<script>
+const I = {
+  search:'<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+  scan:'<path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M8 7v10M12 7v10M16 7v10"/>',
+  shelf:'<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>',
+  series:'<path d="m12 2 10 5-10 5L2 7zM2 17l10 5 10-5M2 12l10 5 10-5"/>',
+  heart:'<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',
+  clock:'<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+  check:'<path d="M20 6 9 17l-5-5"/>',
+  x:'<path d="M18 6 6 18M6 6l12 12"/>',
+  star:'<path d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8-6.2-3.2-6.2 3.2L7 14.2 2 9.3l6.9-1z"/>',
+  out:'<path d="M7 17 17 7M7 7h10v10"/>',
+  book:'<path d="M12 7v14M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/>',
+  info:'<circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>',
+  plus:'<path d="M5 12h14M12 5v14"/>',
+};
+const ic = (n) => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${I[n]}</svg>`;
+const cover = (b, size='') => `<div class="cov ${size}"><img loading="lazy" alt="Cover of ${b.t}" src="covers/${String(b.c).replace("isbn/", "isbn-")}.jpg" onload="this.classList.add('ld')"></div>`;
+const norm = (s) => s.toLowerCase().replace(/&/g,'and').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+
+const SERIES = { 'The Mortal Instruments':6, 'The Dark Artifices':3, 'The Infernal Devices':3 };
+const seed = () => ({
+  books: [
+    { id:1, t:'City of Bones', a:'Cassandra Clare', s:'The Mortal Instruments', n:1, c:8200330, st:'read', r:5 },
+    { id:2, t:'City of Ashes', a:'Cassandra Clare', s:'The Mortal Instruments', n:2, c:1787130, st:'read', r:4 },
+    { id:3, t:'City of Glass', a:'Cassandra Clare', s:'The Mortal Instruments', n:3, c:8200332, st:'read', r:5 },
+    { id:4, t:'City of Fallen Angels', a:'Cassandra Clare', s:'The Mortal Instruments', n:4, c:8200331, st:'read', r:3, lent:{ to:'Sarah', on:'3 Oct' } },
+    { id:5, t:'City of Lost Souls', a:'Cassandra Clare', s:'The Mortal Instruments', n:5, c:8200328, st:'read', r:4 },
+    { id:6, t:'City of Heavenly Fire', a:'Cassandra Clare', s:'The Mortal Instruments', n:6, c:'isbn/9781442416895', st:'read', r:5 },
+    { id:7, t:'Lord of Shadows', a:'Cassandra Clare', s:'The Dark Artifices', n:2, c:8470222, st:'reading', r:0, p:62 },
+    { id:8, t:'Red, White & Royal Blue', a:'Casey McQuiston', c:9171544, st:'read', r:5 },
+  ],
+  wish: [
+    { id:9, t:'Lady Midnight', a:'Cassandra Clare', s:'The Dark Artifices', n:1, c:10503897, st:'unread', r:0 },
+    { id:10, t:'The Queen of Air and Darkness', a:'Cassandra Clare', s:'The Dark Artifices', n:3, c:8737541, st:'unread', r:0 },
+    { id:11, t:'Clockwork Angel', a:'Cassandra Clare', s:'The Infernal Devices', n:1, c:6582736, st:'unread', r:0 },
+  ],
+  feed: [
+    { t:'Lent <b>City of Fallen Angels</b> to Sarah', when:'2 days ago', c:8200331 },
+    { t:'Started <b>Lord of Shadows</b>', when:'5 days ago', c:8470222 },
+    { t:'Finished <b>City of Heavenly Fire</b>, 5 stars', when:'1 week ago', c:'isbn/9781442416895' },
+    { t:'Added <b>Red, White &amp; Royal Blue</b>', when:'2 weeks ago', c:9171544 },
+  ],
+  tab:'shelf', q:'', scans:0,
+});
+
+function mount(root) {
+  const S = seed();
+  root.innerHTML = `
+    <div class="scroll"><div class="top"><div class="brand">Helli's Library</div><div class="avatar" aria-label="Helli">H</div></div>
+      <div class="hello">Good evening, Helli. Check before you buy.</div>
+      <div class="search"><span style="color:var(--muted)">${ic('search')}</span>
+        <input type="search" placeholder="Title, author or series" aria-label="Search your library">
+        <button class="scanbtn" data-act="scan" aria-label="Scan a barcode">${ic('scan')}Scan</button></div>
+      <div class="results" aria-live="polite"></div>
+      <main class="main"></main></div>
+    <nav class="nav" role="tablist">
+      ${[['shelf','Shelf'],['series','Series'],['wish','Wishlist'],['feed','Activity']].map(([k,l]) => `<button role="tab" data-tab="${k}">${ic(k==='wish'?'heart':k==='feed'?'clock':k)}${l}</button>`).join('')}
+    </nav>
+    <div class="scrim" data-act="close"></div><div class="sheet" role="dialog" aria-modal="true"></div>
+    <div class="toast" role="status"><span class="msg"></span><button data-act="undo">Undo</button></div>`;
+  const $ = (s) => root.querySelector(s);
+  let undo = null, toastT;
+
+  const toast = (msg, undoFn) => {
+    undo = undoFn; $('.toast .msg').innerHTML = msg; $('.toast button').hidden = !undoFn;
+    $('.toast').classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => $('.toast').classList.remove('show'), 4000);
+  };
+  const find = (id) => S.books.find(b => b.id === id) || S.wish.find(b => b.id === id);
+  const seriesLine = (b) => b.s ? `${b.s.replace('The ','')} #${b.n}` : b.a;
+
+  function renderResults() {
+    const q = norm(S.q), box = $('.results');
+    if (!q) { box.innerHTML = ''; return; }
+    const tok = q.split(' ');
+    const hit = (b) => tok.every(t => norm(`${b.t} ${b.a} ${b.s||''}`).includes(t));
+    const own = S.books.filter(hit).slice(0,3), wish = S.wish.filter(hit).slice(0,2);
+    let html = own.map(b => `<button class="verdict own" data-open="${b.id}">${cover(b,'sm')}<div><div class="head">${ic('check')} You own this</div>${b.t}<small>${seriesLine(b)}${b.lent ? ` · lent to ${b.lent.to}` : ''}</small></div></button>`).join('');
+    html += wish.map(b => `<div class="verdict wish">${cover(b,'sm')}<div><div class="head">${ic('heart')} Not owned, on your wishlist</div>${b.t}<small>${seriesLine(b)}${gapNote(b)}</small></div></div>`).join('');
+    if (!own.length && !wish.length) html = `<div class="verdict no"><span style="color:var(--muted)">${ic('info')}</span><div><div class="head">Not in your library</div><small>Safe to buy. You don't own anything matching "${S.q}".</small></div></div>`;
+    box.innerHTML = html;
+  }
+  const gapNote = (b) => b.s && !S.books.some(x => x.s === b.s && x.n === b.n) && S.books.some(x => x.s === b.s) ? ' · fills a gap in your series' : '';
+
+  function countUp(el, to) {
+    let n = 0; const step = () => { n = Math.min(to, n + Math.ceil(to / 12)); el.textContent = n; if (n < to) requestAnimationFrame(step); }; step();
+  }
+
+  function renderMain() {
+    root.querySelectorAll('.nav button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === S.tab));
+    const m = $('.main'); let h = '';
+    if (S.tab === 'shelf') {
+      const reading = S.books.find(b => b.st === 'reading');
+      h += `<div class="stats"><div class="stat"><b data-n="${S.books.length}">0</b><span>Books</span></div><div class="stat"><b data-n="${S.books.filter(b=>b.st==='read').length}">0</b><span>Read</span></div><div class="stat"><b data-n="${S.books.filter(b=>b.lent).length}">0</b><span>Lent out</span></div></div>`;
+      if (reading) h += `<button class="now press" data-open="${reading.id}" style="width:100%;text-align:left">${cover(reading,'md')}<div style="flex:1"><div class="k">Currently reading</div><div class="t">${reading.t}</div><div class="bar"><i style="width:${reading.p||10}%"></i></div><small>${reading.p||10}% · ${seriesLine(reading)}</small></div></button>`;
+      h += `<h2>Your shelf <span>${S.books.length} books</span></h2><div class="shelf">${S.books.map((b,i) => `<button class="book" style="--i:${i}" data-open="${b.id}" aria-label="${b.t}">${b.lent ? `<span class="badge lent">${ic('out')}</span>` : b.st==='read' ? `<span class="badge read">${ic('check')}</span>` : b.st==='reading' ? `<span class="badge reading">${ic('book')}</span>` : ''}${cover(b)}</button>`).join('')}</div>`;
+      h += `<div class="feed">${S.feed.slice(0,3).map((e,i) => `<div class="ev" style="--i:${i}">${cover(e,'sm')}<div><p>${e.t}</p><time>${e.when}</time></div></div>`).join('')}</div>`;
+    }
+    if (S.tab === 'series') {
+      const names = [...new Set([...S.books, ...S.wish].map(b => b.s).filter(Boolean))];
+      h += `<h2>Series <span>dashed = still to buy</span></h2>` + names.map((s,i) => {
+        const tot = SERIES[s], own = S.books.filter(b => b.s === s);
+        const missing = Array.from({length:tot},(_,k)=>k+1).filter(n => !own.some(b => b.n === n));
+        return `<div class="series" style="--i:${i}"><div class="name">${s}<span>${own.length} of ${tot}${missing.length ? '' : ' · complete'}</span></div><div class="slots">${Array.from({length:tot},(_,k) => {
+          const b = own.find(x => x.n === k+1);
+          return `<div class="slot">${b ? `<button data-open="${b.id}" style="width:100%">${cover(b)}</button>` : `<div class="miss">${k+1}</div>`}<div class="no">#${k+1}</div></div>`; }).join('')}</div>
+          ${missing.length ? `<div class="hint">${ic('info')} Missing ${missing.map(n=>'#'+n).join(', ')}</div>` : ''}</div>`;
+      }).join('');
+    }
+    if (S.tab === 'wish') {
+      h += `<h2>Wishlist <span>only you can see this</span></h2>` + (S.wish.length ? S.wish.map((b,i) => `<div class="row-item" style="--i:${i}">${cover(b,'sm')}<div><div class="t">${b.t}</div><div class="a">${seriesLine(b)}</div></div><div class="act"><button class="ghost press" data-got="${b.id}">Got it</button></div></div>`).join('') : `<p style="color:var(--muted);text-align:center;padding:30px 0">Wishlist empty. Time to visit a bookshop.</p>`);
+    }
+    if (S.tab === 'feed') {
+      h += `<h2>Activity</h2><div class="feed" style="margin-top:0">${S.feed.map((e,i) => `<div class="ev" style="--i:${i}">${cover(e,'sm')}<div><p>${e.t}</p><time>${e.when}</time></div></div>`).join('')}</div>`;
+    }
+    m.innerHTML = `<div class="view">${h}</div>`;
+    m.querySelectorAll('[data-n]').forEach(el => countUp(el, +el.dataset.n));
+  }
+
+  function openSheet(html) { $('.sheet').innerHTML = `<div class="grab"></div><button class="close" data-act="close" aria-label="Close">${ic('x')}</button>${html}`; root.classList.add('open'); }
+  function closeSheet() { root.classList.remove('open'); }
+
+  function bookSheet(id) {
+    const b = find(id);
+    openSheet(`<div class="detail">${cover(b)}<div><h3>${b.t}</h3><p>${b.a}</p><p>${b.s ? `Book ${b.n} of ${SERIES[b.s]} · ${b.s}` : 'Standalone'}</p></div></div>
+      <div class="lbl">Status</div><div class="seg">${['unread','reading','read'].map(s => `<button aria-pressed="${b.st===s}" data-st="${s}">${s[0].toUpperCase()+s.slice(1)}</button>`).join('')}</div>
+      <div class="lbl">Your rating</div><div class="stars">${[1,2,3,4,5].map(n => `<button class="${n<=b.r?'on':''}" data-r="${n}" aria-label="${n} stars">${ic('star')}</button>`).join('')}</div>
+      <div class="lbl">Lending</div><div class="lend">${b.lent
+        ? `<span class="note">With ${b.lent.to} since ${b.lent.on}</span><button class="primary" data-act="return">Returned</button>`
+        : `<input placeholder="Lend to…" aria-label="Friend's name"><button class="primary" data-act="lend">Lend</button>`}</div>`);
+    $('.sheet').dataset.id = id;
+  }
+
+  function scanSheet() {
+    const target = S.scans++ % 2 === 0 ? S.books.find(b => b.t === 'City of Glass') : (S.wish[0] || S.books[0]);
+    openSheet(`<div class="finder"><div class="bc"></div><div class="frame"></div><div class="laser"></div></div><div class="scanmsg">Point your camera at the barcode</div><div class="scanres"></div>`);
+    setTimeout(() => {
+      if (!root.classList.contains('open')) return;
+      $('.finder').classList.add('done'); $('.scanmsg').textContent = 'Got it: ISBN detected';
+      const owned = S.books.includes(target);
+      $('.scanres').innerHTML = owned
+        ? `<div class="verdict own">${cover(target,'md')}<div><div class="head">${ic('check')} Don't buy, you own this</div>${target.t}<small>${seriesLine(target)} · ${target.st}</small></div></div>`
+        : `<div class="verdict wish">${cover(target,'md')}<div><div class="head">${ic('heart')} Buy it! On your wishlist</div>${target.t}<small>${seriesLine(target)}${gapNote(target)}</small></div></div><button class="primary" style="width:100%;margin-top:10px" data-got="${target.id}">${'Add to library'}</button>`;
+    }, 1700);
+  }
+
+  root.addEventListener('input', (e) => { if (e.target.type === 'search') { S.q = e.target.value; renderResults(); } });
+  root.addEventListener('click', (e) => {
+    const t = e.target.closest('button, .scrim'); if (!t) return;
+    if (t.dataset.tab) { S.tab = t.dataset.tab; renderMain(); $('.scroll').scrollTo({ top:0, behavior:'smooth' }); }
+    if (t.dataset.open) bookSheet(+t.dataset.open);
+    const act = t.dataset.act, sid = +$('.sheet').dataset.id;
+    if (act === 'close') closeSheet();
+    if (act === 'scan') scanSheet();
+    if (act === 'undo' && undo) { undo(); undo = null; $('.toast').classList.remove('show'); }
+    if (t.dataset.st) { const b = find(sid), prev = b.st; b.st = t.dataset.st; if (b.st === 'reading') b.p = b.p || 5; bookSheet(sid); renderMain();
+      if (b.st === 'read' && prev !== 'read') { S.feed.unshift({ t:`Finished <b>${b.t}</b>`, when:'just now', c:b.c }); toast(`Marked <b>${b.t}</b> as read`, () => { b.st = prev; S.feed.shift(); renderMain(); }); } }
+    if (t.dataset.r) { const b = find(sid); b.r = +t.dataset.r; bookSheet(sid); renderMain(); }
+    if (act === 'lend') { const name = $('.lend input').value.trim(); if (!name) { $('.lend input').focus(); return; }
+      const b = find(sid); b.lent = { to:name, on:'today' }; S.feed.unshift({ t:`Lent <b>${b.t}</b> to ${name}`, when:'just now', c:b.c }); bookSheet(sid); renderMain(); toast(`Lent to ${name}`, () => { delete b.lent; S.feed.shift(); renderMain(); }); }
+    if (act === 'return') { const b = find(sid), was = b.lent; delete b.lent; S.feed.unshift({ t:`<b>${b.t}</b> came back from ${was.to}`, when:'just now', c:b.c }); bookSheet(sid); renderMain(); toast('Marked as returned', () => { b.lent = was; S.feed.shift(); renderMain(); }); }
+    if (t.dataset.got) { const id = +t.dataset.got, b = S.wish.find(x => x.id === id); if (!b) return;
+      S.wish = S.wish.filter(x => x !== b); S.books.push(b); S.feed.unshift({ t:`Added <b>${b.t}</b>`, when:'just now', c:b.c });
+      closeSheet(); renderMain(); renderResults(); toast(`<b>${b.t}</b> added to your library`, () => { S.books = S.books.filter(x => x !== b); S.wish.unshift(b); S.feed.shift(); renderMain(); renderResults(); }); }
+  });
+  root.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSheet(); if (e.key === 'Enter' && e.target.matches('.lend input')) root.querySelector('[data-act=lend]').click(); });
+  renderMain();
+}
+
+const options = [
+  ['A','A · Clean & Pink','Your current site, polished. Bright, airy, modern.','Calistoga + Plus Jakarta Sans'],
+  ['B','B · Cozy Bookshop','Warm paper, a wooden shelf, handwritten lending notes.','Cormorant Garamond + Crimson Pro + Caveat'],
+  ['C','C · Dark Fantasy','Midnight and gold, engraved headings. Shadowhunters energy.','Cinzel + Atkinson Hyperlegible'],
+];
+for (const [cls, label, sub, fonts] of options) {
+  const opt = document.createElement('section');
+  opt.className = `option ${cls}`;
+  opt.innerHTML = `<div class="label">${label}</div><div class="sub">${sub}</div><div class="fonts">Fonts: ${fonts}</div><div class="phone"><div class="app"></div></div>`;
+  document.getElementById('row').appendChild(opt);
+  mount(opt.querySelector('.app'));
+}
+</script>
