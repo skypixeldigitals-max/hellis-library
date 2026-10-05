@@ -17,9 +17,12 @@ A personal book catalog for checking that you don't already own a book before yo
 
 ## Owner access
 
-Only emails listed in  can create an account (a database trigger on  blocks everyone else and confirms owners immediately, so no email link is needed). To add an owner, run in the Supabase SQL editor:
+Only emails listed in `public.admins` can create an account. A database trigger on `auth.users` blocks everyone else and confirms owners immediately, so no email link is needed. To add an owner, run in the Supabase SQL editor:
 
-\
+```sql
+insert into public.admins (email) values ('her@email.com');
+```
+
 Then on the site: **Owner login → First time? Create your password**. After that, log in with email and password.
 
 Forgot password: delete that user under Authentication → Users in Supabase, then create the password again on the site.
