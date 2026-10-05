@@ -2,8 +2,64 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Helli's Library</title>
-<meta http-equiv="refresh" content="0; url=design/">
+<meta name="description" content="Helli's books: what she owns, what she's reading, and what's for sale.">
+<meta name="theme-color" content="#f4ead8">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%237356a0'/%3E%3Cpath d='M9 8h5a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H9zM23 8h-5a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h6z' fill='none' stroke='%23fbf6ee' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Crimson+Pro:wght@400;500;600;700&family=Caveat:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
 </head>
-<body><a href="design/">See the designs</a></body>
+<body>
+<a class="skip" href="#main">Skip to books</a>
+<div class="layout">
+  <aside class="side">
+    <header class="top">
+      <div>
+        <h1 class="brand"><span class="owner-name">Helli</span>'s Library</h1>
+        <p class="hello">Check before you buy.</p>
+      </div>
+      <button class="avatar" id="avatar" aria-label="Account and settings">H</button>
+    </header>
+
+    <div class="search" role="search">
+      <span class="muted" aria-hidden="true"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
+      <label for="q" class="sr">Search the library</label>
+      <input id="q" type="search" placeholder="Title, author or series" autocomplete="off">
+      <button class="scanbtn" id="scanBtn" aria-label="Scan a barcode">
+        <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M8 7v10M12 7v10M16 7v10"/></svg>Scan
+      </button>
+    </div>
+    <div class="results" id="results" aria-live="polite"></div>
+
+    <div class="stats" id="stats"></div>
+    <div id="now"></div>
+    <button class="primary wide owner-only" id="addBtn" hidden>
+      <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg>Add a book
+    </button>
+    <nav class="nav" id="nav" aria-label="Sections"></nav>
+  </aside>
+
+  <main id="main" class="main" tabindex="-1">
+    <div class="loading" id="loading">
+      <div class="skel-grid">
+        <div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div>
+        <div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div>
+      </div>
+    </div>
+    <div id="view"></div>
+    <footer class="foot" id="foot"></footer>
+  </main>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"><span class="msg"></span><button id="undoBtn" type="button">Undo</button></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
 </html>
