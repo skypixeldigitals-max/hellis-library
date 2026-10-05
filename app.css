@@ -251,3 +251,30 @@ body.is-loading .loading { display: block; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
 .field .search input { border: 0; background: transparent; min-height: 44px; padding: 0; }
+
+/* ---------- phone & small tablet ---------- */
+.finderbar { display: grid; gap: 8px; }
+@media (max-width: 959px) {
+  /* Let sidebar children join the page flow so the search bar can stick for the whole scroll */
+  .side { display: contents; }
+  .side > * + * { margin-top: 14px; }
+  .finderbar { position: sticky; top: 0; z-index: 15; background: var(--bg); margin-inline: calc(-1 * var(--gutter)); padding-inline: var(--gutter); padding-block: calc(8px + env(safe-area-inset-top, 0px)) 8px; transition: box-shadow .2s; }
+  .finderbar.stuck { box-shadow: 0 6px 14px -8px rgba(60, 30, 10, .35); }
+  .finderbar .results { max-height: 55dvh; overflow-y: auto; overscroll-behavior: contain; }
+  .brand { font-size: 30px; }
+  .stat { padding: 8px 4px; }
+  .stat b { font-size: 24px; }
+  .main { margin-top: 22px; }
+  .filters { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: calc(-1 * var(--gutter)); padding-inline: var(--gutter); }
+  .filters::-webkit-scrollbar { display: none; }
+  .filters > * { flex: none; }
+  h2 { font-size: 26px; }
+}
+@media (max-width: 699px) {
+  .shelf { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px 10px; padding: 14px 10px 16px; }
+  .badge { width: 20px; height: 20px; top: -6px; right: -6px; }
+  .badge svg.i { width: 11px; height: 11px; }
+}
+@media (max-width: 340px) {
+  .shelf { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}

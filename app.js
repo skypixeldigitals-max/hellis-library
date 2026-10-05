@@ -495,7 +495,7 @@
 
   // ---------- actions ----------
   const A = {
-    tab: (t) => { S.tab = t.dataset.tab; history.replaceState(null, '', `#${S.tab}`); renderNav(); renderView(); if (window.innerWidth < 960) window.scrollTo({ top: $('#main').offsetTop - 12, behavior: 'smooth' }); },
+    tab: (t) => { S.tab = t.dataset.tab; history.replaceState(null, '', `#${S.tab}`); renderNav(); renderView(); if (window.innerWidth < 960) window.scrollTo({ top: $('#main').getBoundingClientRect().top + window.scrollY - $('.finderbar').offsetHeight - 8, behavior: 'smooth' }); },
     filter: (t) => { S.filter = t.dataset.f; renderView(); },
     open: (t) => openBook(t.dataset.id),
     close: () => closeSheet(),
@@ -600,6 +600,8 @@
   $('#avatar').addEventListener('click', () => openAccount());
   $('#addBtn').addEventListener('click', () => openForm());
   $('#scanBtn').addEventListener('click', openScanner);
+  // Shadow under the search bar once it sticks to the top on phones
+  new IntersectionObserver(([e]) => $('.finderbar').classList.toggle('stuck', !e.isIntersecting)).observe($('.top'));
   $('#q').addEventListener('input', (e) => { S.q = e.target.value; renderResults(); });
 
   document.addEventListener('input', (e) => {
