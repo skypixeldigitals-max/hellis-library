@@ -30,6 +30,8 @@
     link: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
     bag: '<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0"/>',
     hourglass: '<path d="M5 22h14M5 2h14M17 22v-4.2a2 2 0 0 0-.6-1.4L12 12l-4.4 4.4a2 2 0 0 0-.6 1.4V22M7 2v4.2a2 2 0 0 0 .6 1.4L12 12l4.4-4.4a2 2 0 0 0 .6-1.4V2"/>',
+    image: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>',
+    camera: '<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3"/>',
     sparkle: '<path d="M12 2l2.2 6.8L21 11l-6.8 2.2L12 20l-2.2-6.8L3 11l6.8-2.2z" fill="currentColor" stroke="none"/>',
     feather: '<path d="M12.67 19a2 2 0 0 0 1.42-.59l6.17-6.17a6 6 0 1 0-8.49-8.49L5.6 9.92A2 2 0 0 0 5 11.34V19zM16 8 2 22M17.5 15H9"/>',
   };
@@ -303,7 +305,7 @@
     const b = findBook(id); if (!b) return;
     const l = S.lending[b.id];
     const head = `<div class="sheet-head"><span></span>${closeBtn}</div>
-      <div class="detail">${cover(b, 'lg')}<div class="grow"><h3 id="sheetTitle">${esc(b.title)}</h3><p>${esc(b.author)}</p><p>${b.series ? `Book ${b.series_no || '?'}${b.series_total ? ` of ${b.series_total}` : ''} · ${esc(b.series)}` : 'Standalone'}</p></div></div>`;
+      <div class="detail">${S.admin ? `<button class="cov-edit" data-a="cover" data-id="${b.id}" aria-label="Change cover">${cover(b, 'lg')}<span class="cov-badge">${ic('image')}</span></button>` : cover(b, 'lg')}<div class="grow"><h3 id="sheetTitle">${esc(b.title)}</h3><p>${esc(b.author)}</p><p>${b.series ? `Book ${b.series_no || '?'}${b.series_total ? ` of ${b.series_total}` : ''} · ${esc(b.series)}` : 'Standalone'}</p></div></div>`;
     if (!S.admin) {
       sheet(`${head}<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">${b.is_lent ? '<span class="pill warn">Lent out</span>' : '<span class="pill ok">On the shelf</span>'}<span class="pill lav">${cap(b.status)}</span>${b.rating ? stars(b.rating) : ''}</div>`);
       return;
@@ -334,6 +336,8 @@
         <div style="display:flex;gap:12px;align-items:flex-end"><span id="fcov">${cover({ title: row.title || '', author: row.author || '', cover_url: F.cover_url }, 'md')}</span>
           <div class="field" style="flex:1;min-width:0"><label for="ft">Title *</label><input id="ft" name="title" required value="${esc(row.title)}" autocomplete="off"></div></div>
         <span class="errbox" id="ferr" hidden>Add a title so you can find this book later.</span>
+        <button type="button" class="ghost" data-a="form-cover" style="justify-self:start">${ic('image')}Choose a different cover</button>
+        <div id="fcp" hidden></div>
         <div id="fdup"></div>
         <div class="field"><label for="fa">Author</label><input id="fa" name="author" value="${esc(row.author)}" autocomplete="off"></div>
         <div class="row3" id="fseries">
@@ -432,6 +436,73 @@
     const goTab = F.mode === 'add' ? { books: 'shelf', wishlist: 'wish', sales: 'sale' }[F.table] : S.tab;
     closeSheet(); S.tab = goTab; history.replaceState(null, '', `#${goTab}`);
     await load(); toast(msg);
+  }
+
+  // ---------- cover picker ----------
+  let CP = null;
+  const olCover = (id) => `https://covers.openlibrary.org/b/id/${id}-M.jpg`;
+  async function coverOptions(title, author) {
+    const enc = encodeURIComponent, found = [];
+    const ol = (async () => {
+      const r = await fetch(`https://openlibrary.org/search.json?title=${enc(title)}${author ? `&author=${enc(author)}` : ''}&fields=key,cover_i&limit=3`);
+      const docs = (await r.json()).docs || [];
+      docs.forEach((d) => d.cover_i && found.push(olCover(d.cover_i)));
+      if (docs[0]?.key) {
+        const e = await (await fetch(`https://openlibrary.org${docs[0].key}/editions.json?limit=80`)).json();
+        (e.entries || []).forEach((en) => (en.covers || []).filter((c) => c > 0).forEach((c) => found.push(olCover(c))));
+      }
+    })().catch(() => {});
+    const gb = (async () => {
+      const r = await fetch(`https://www.googleapis.com/books/v1/volumes?q=intitle:${enc(title)}${author ? `+inauthor:${enc(author)}` : ''}&maxResults=15`);
+      ((await r.json()).items || []).forEach((it) => {
+        const u = it.volumeInfo?.imageLinks?.thumbnail;
+        if (u) found.push(u.replace('http:', 'https:').replace('&edge=curl', ''));
+      });
+    })().catch(() => {});
+    await Promise.all([ol, gb]);
+    return [...new Set(found)].slice(0, 60);
+  }
+
+  async function mountCoverPicker(el, { title, author, current, onPick }) {
+    CP = { onPick };
+    el.innerHTML = `<div class="cp-tools"><button type="button" class="ghost" data-a="cp-upload">${ic('camera')}Upload a photo</button><button type="button" class="ghost" data-a="cp-pick" data-u="">No cover</button>
+      <input type="file" id="cpfile" accept="image/*" hidden></div>
+      <p class="cp-msg muted" id="cpmsg">Finding covers for "${esc(title)}"…</p><div class="cp-grid" id="cpgrid"></div>`;
+    if (!title.trim()) { $('#cpmsg').textContent = 'Type the title first, or upload a photo of your copy.'; return; }
+    const opts = await coverOptions(title, author);
+    if (!el.isConnected) return;
+    $('#cpmsg').textContent = opts.length ? 'Tap the one that matches your copy.' : 'No covers found online. Upload a photo of your copy instead.';
+    $('#cpgrid').innerHTML = opts.map((u) => `<button type="button" class="cp-opt" data-a="cp-pick" data-u="${esc(u)}" aria-pressed="${u === current}"><img loading="lazy" alt="Cover option" src="${esc(u)}" onload="if(this.naturalWidth<5)this.parentNode.remove()" onerror="this.parentNode.remove()"></button>`).join('');
+  }
+
+  async function resizeImage(file, maxW = 600) {
+    const bmp = await createImageBitmap(file);
+    const scale = Math.min(1, maxW / bmp.width);
+    const c = document.createElement('canvas');
+    c.width = Math.round(bmp.width * scale); c.height = Math.round(bmp.height * scale);
+    c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+    return new Promise((res) => c.toBlob(res, 'image/jpeg', 0.85));
+  }
+  async function uploadCover(file) {
+    const blob = await resizeImage(file);
+    const path = `${crypto.randomUUID()}.jpg`;
+    const { error } = await sb.storage.from('covers').upload(path, blob, { contentType: 'image/jpeg' });
+    if (error) throw error;
+    return sb.storage.from('covers').getPublicUrl(path).data.publicUrl;
+  }
+
+  function openCoverSheet(id) {
+    const b = findBook(id); if (!b) return;
+    sheet(`<div class="sheet-head"><h3 id="sheetTitle">Pick a cover</h3>${closeBtn}</div>
+      <p class="muted" style="margin:-8px 0 12px">${esc(b.title)}</p><div id="cpwrap"></div>
+      <div class="sheet-actions"><button class="ghost" data-a="open" data-id="${b.id}">Back</button></div>`);
+    mountCoverPicker($('#cpwrap'), {
+      title: b.title, author: b.author, current: b.cover_url,
+      onPick: async (url) => {
+        if (!(await save(sb.from('books').update({ cover_url: url || null }).eq('id', b.id)))) return;
+        await load(); openBook(b.id); toast('Cover updated');
+      },
+    });
   }
 
   // ---------- scanner ----------
@@ -588,6 +659,18 @@
       await load();
       toast(`Deleted ${b.title}`, () => sb.from('books').insert({ ...b, is_lent: false }));
     },
+    cover: (t) => openCoverSheet(t.dataset.id),
+    'cp-pick': (t) => CP?.onPick(t.dataset.u || null),
+    'cp-upload': () => $('#cpfile')?.click(),
+    'form-cover': () => {
+      const box = $('#fcp');
+      box.hidden = !box.hidden;
+      if (box.hidden) return;
+      mountCoverPicker(box, {
+        title: $('#ft').value, author: $('#fa').value, current: F.cover_url,
+        onPick: (url) => { F.cover_url = url; setCoverPreview(); box.hidden = true; toast(url ? 'Cover picked. Save to keep it.' : 'Cover removed. Save to keep it.'); },
+      });
+    },
     'del-sale': async (t) => {
       if (!t.classList.contains('armed')) { t.classList.add('armed'); t.textContent = 'Tap again to delete'; return; }
       const s = { ...S.sales.find((x) => x.id === t.dataset.id) };
@@ -646,6 +729,13 @@
     if (e.target.id === 'prog') $('#progv').textContent = `${e.target.value}%`;
   });
   document.addEventListener('change', async (e) => {
+    if (e.target.id === 'cpfile' && e.target.files[0]) {
+      const msg = $('#cpmsg');
+      msg.textContent = 'Uploading your photo…';
+      try { const url = await uploadCover(e.target.files[0]); await CP?.onPick(url); }
+      catch (err) { msg.textContent = /permission|row-level|unauthor/i.test(err.message || '') ? 'Only the owner can upload covers. Log in and try again.' : `Couldn't upload that photo: ${err.message}`; }
+      return;
+    }
     if (e.target.id === 'prog') {
       const b = findBook(e.target.dataset.id); b.progress = +e.target.value; renderSide();
       await save(sb.from('books').update({ progress: b.progress }).eq('id', b.id));

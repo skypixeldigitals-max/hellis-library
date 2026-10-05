@@ -330,3 +330,18 @@ h2 > span { margin-left: auto; }
   .mark { width: 42px; height: 42px; }
   .twinkle { left: 35px; }
 }
+
+/* ---------- cover picker ---------- */
+.cov-edit { position: relative; flex: none; border-radius: 6px; }
+.cov-edit:hover .cov { transform: translateY(-2px); }
+.cov-edit .cov { transition: transform .2s var(--ease); }
+.cov-badge { position: absolute; right: -8px; bottom: -8px; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); border: 3px solid var(--sheet-bg); }
+.cov-badge svg.i { width: 16px; height: 16px; }
+.cp-tools { display: flex; gap: 8px; flex-wrap: wrap; }
+.cp-msg { font-size: 15px; margin: 12px 0 8px; }
+.cp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 12px; }
+.cp-opt { border-radius: 6px; padding: 0; transition: transform .15s var(--ease); animation: rise .3s var(--ease) both; }
+.cp-opt img { display: block; width: 100%; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 4px; box-shadow: var(--shadow-cover); background: var(--skeleton); }
+.cp-opt:hover { transform: translateY(-3px); }
+.cp-opt[aria-pressed=true] { outline: 3px solid var(--accent); outline-offset: 3px; }
+#fcp { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 12px; }
