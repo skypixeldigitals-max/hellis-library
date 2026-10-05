@@ -51,7 +51,7 @@
   .verdict small { display:block; color:var(--muted); font-size:13px; margin-top:2px; }
 
   .cov { position:relative; aspect-ratio:2/3; border-radius:3px 6px 6px 3px; overflow:hidden; background:var(--skeleton); box-shadow:var(--cover-shadow); flex:none; }
-  .cov img { width:100%; height:100%; object-fit:cover; display:block; opacity:0; transition:opacity .35s; }
+  .cov img { width:100%; height:100%; object-fit:cover; display:block; font-size:0; opacity:0; transition:opacity .35s; }
   .cov img.ld { opacity:1; }
   .cov::after { content:''; position:absolute; inset:0; background:linear-gradient(90deg, rgba(0,0,0,.22), transparent 7%, transparent); pointer-events:none; }
   .cov.sm { width:38px; }
@@ -72,7 +72,7 @@
   h2 { font-family:var(--display); font-weight:var(--display-w); font-size:20px; color:var(--title); letter-spacing:var(--ls); margin:4px 0 12px; display:flex; justify-content:space-between; align-items:baseline; }
   h2 span { font-family:var(--body); font-size:13px; color:var(--muted); font-weight:400; letter-spacing:0; }
 
-  .shelf { display:grid; grid-template-columns:repeat(4,1fr); gap:14px 10px; padding:14px 10px 16px; background:var(--shelf-bg); border-radius:var(--r); border-bottom:var(--shelf-edge); }
+  .shelf { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px 10px; padding:14px 10px 16px; background:var(--shelf-bg); border-radius:var(--r); border-bottom:var(--shelf-edge); }
   .book { position:relative; text-align:left; animation:rise .4s cubic-bezier(.2,.8,.2,1) both; animation-delay:calc(var(--i) * 40ms); transition:transform .18s; }
   .book:hover { transform:translateY(-3px); }
   .badge { position:absolute; top:-6px; right:-6px; width:22px; height:22px; border-radius:50%; display:grid; place-items:center; border:2px solid var(--bg); z-index:1; }
@@ -182,7 +182,7 @@
   <h1>Pick a direction</h1>
   <p>All three are clickable prototypes running on the same features and your real books. Try these in each one:</p>
   <ul>
-    <li>Type in the search box: <b>glass</b>, <b>lady midnight</b> or <b>dune</b></li>
+    <li>Type in the search box: <b>fault</b>, <b>emily henry</b> or <b>dune</b></li>
     <li>Tap <b>Scan</b> twice to see a book you own, then a book on your wishlist</li>
     <li>Tap a cover to change read status, stars, or lend it to someone</li>
     <li>Switch tabs; on Wishlist tap <b>Got it</b> and watch the series gap fill in</li>
@@ -210,9 +210,14 @@ const ic = (n) => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${I[n]}
 const cover = (b, size='') => `<div class="cov ${size}"><img loading="lazy" alt="Cover of ${b.t}" src="covers/${String(b.c).replace("isbn/", "isbn-")}.jpg" onload="this.classList.add('ld')"></div>`;
 const norm = (s) => s.toLowerCase().replace(/&/g,'and').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
 
-const SERIES = { 'The Mortal Instruments':6, 'The Dark Artifices':3, 'The Infernal Devices':3 };
+const SERIES = { 'It Ends with Us':2, 'The Mortal Instruments':6, 'The Dark Artifices':3, 'The Infernal Devices':3 };
 const seed = () => ({
   books: [
+    { id:12, t:'The Fault in Our Stars', a:'John Green', c:7418786, st:'read', r:5 },
+    { id:13, t:'Beach Read', a:'Emily Henry', c:9426296, st:'read', r:5 },
+    { id:14, t:'It Ends with Us', a:'Colleen Hoover', s:'It Ends with Us', n:1, c:10473609, st:'read', r:4 },
+    { id:15, t:'The Love Hypothesis', a:'Ali Hazelwood', c:10601402, st:'unread', r:0 },
+    { id:16, t:'Me Before You', a:'Jojo Moyes', c:14419339, st:'read', r:5, lent:{ to:'Maya', on:'21 Sep' } },
     { id:1, t:'City of Bones', a:'Cassandra Clare', s:'The Mortal Instruments', n:1, c:8200330, st:'read', r:5 },
     { id:2, t:'City of Ashes', a:'Cassandra Clare', s:'The Mortal Instruments', n:2, c:1787130, st:'read', r:4 },
     { id:3, t:'City of Glass', a:'Cassandra Clare', s:'The Mortal Instruments', n:3, c:8200332, st:'read', r:5 },
@@ -223,11 +228,16 @@ const seed = () => ({
     { id:8, t:'Red, White & Royal Blue', a:'Casey McQuiston', c:9171544, st:'read', r:5 },
   ],
   wish: [
+    { id:17, t:'It Starts with Us', a:'Colleen Hoover', s:'It Ends with Us', n:2, c:12749873, st:'unread', r:0 },
+    { id:18, t:'Book Lovers', a:'Emily Henry', c:11567819, st:'unread', r:0 },
+    { id:19, t:'People We Meet on Vacation', a:'Emily Henry', c:10476782, st:'unread', r:0 },
     { id:9, t:'Lady Midnight', a:'Cassandra Clare', s:'The Dark Artifices', n:1, c:10503897, st:'unread', r:0 },
     { id:10, t:'The Queen of Air and Darkness', a:'Cassandra Clare', s:'The Dark Artifices', n:3, c:8737541, st:'unread', r:0 },
     { id:11, t:'Clockwork Angel', a:'Cassandra Clare', s:'The Infernal Devices', n:1, c:6582736, st:'unread', r:0 },
   ],
   feed: [
+    { t:'Finished <b>Beach Read</b>, 5 stars', when:'yesterday', c:9426296 },
+    { t:'Added <b>The Love Hypothesis</b>', when:'yesterday', c:10601402 },
     { t:'Lent <b>City of Fallen Angels</b> to Sarah', when:'2 days ago', c:8200331 },
     { t:'Started <b>Lord of Shadows</b>', when:'5 days ago', c:8470222 },
     { t:'Finished <b>City of Heavenly Fire</b>, 5 stars', when:'1 week ago', c:'isbn/9781442416895' },
