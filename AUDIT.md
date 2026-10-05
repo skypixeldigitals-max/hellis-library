@@ -29,9 +29,11 @@ Tested on the live data (32 books) at 320×640 (small phone), 375–390 (phone),
 - A loading skeleton shows while books load, and every section has a designed empty state.
 - Only owners can write. Verified that saves without a login are refused by the database.
 
-## Worth considering later
+## Follow-ups (all done, 6 Oct 2026)
 
-- **Sort / group the shelf** (by series, author, or recently added). With 30+ books, a flat grid gets long on phones.
-- **Cover CDN dependency:** wsrv.nl is a free service. If it ever disappears, covers fall back to Open Library automatically (slower but working). For full control, covers could be copied into Supabase Storage.
-- **Password reset** still needs a manual reset (see README).
-- **Swipe down to close** sheets on phones (currently: ✕, Back button, or tap outside).
+| Finding | Fix |
+|---------|-----|
+| With 45 books, a flat shelf is long on phones. | **Sort** by Series, Author, Title A–Z (ignores "The/A/An") or Recently added. The choice is remembered on each device. |
+| Covers depended on Open Library and a free CDN. | The `cache-covers` edge function copies every cover into the project's own `covers` bucket (WebP, 400px) and keeps the original link in `cover_src`. All 44 existing covers were copied; new ones are copied automatically after each save. |
+| No way to recover a forgotten password. | **Change my password** in Settings. **Reset another owner's password** (the `reset-owner-password` edge function, owners only, owner targets only) lets either owner reset the other's. A "Forgot password?" link on the login screen explains the steps. |
+| Sheets could only be closed with ✕, Back, or tapping outside. | On phones, drag a sheet down from the top to close it. |

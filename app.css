@@ -381,3 +381,24 @@ h2 > span { margin-left: auto; }
 @media (min-width: 768px) and (max-width: 1023px) {
   .shelf { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 18px 12px; padding: 16px 12px 18px; }
 }
+
+/* ---------- sort, password settings ---------- */
+.shelf-tools { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; }
+.shelf-tools .filters { margin-bottom: 0; flex: 1; min-width: 0; }
+.sortbox { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 10px; border: 1px solid var(--line-strong); border-radius: 99px; color: var(--muted); background: var(--card); flex: none; }
+.sortbox svg.i { width: 16px; height: 16px; }
+.sortbox select { border: 0; background: transparent; font-size: 15px; color: var(--text); min-height: 40px; cursor: pointer; }
+.sortbox:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--ring); }
+@media (max-width: 767px) {
+  .shelf-tools { flex-direction: column; align-items: stretch; gap: 8px; }
+  .sortbox { align-self: flex-start; }
+}
+.pwbox { margin-top: 14px; border: 1px solid var(--line); border-radius: var(--r); background: var(--card); }
+.pwbox summary { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 14px; cursor: pointer; font-weight: 600; list-style: none; }
+.pwbox summary::-webkit-details-marker { display: none; }
+.pwbox summary::after { content: '+'; margin-left: auto; color: var(--muted); font-size: 20px; }
+.pwbox[open] summary::after { content: '–'; }
+.pwbox summary svg.i { color: var(--accent); width: 18px; height: 18px; }
+.pwbox > *:not(summary) { margin-inline: 14px; }
+.pwbox form { padding-bottom: 14px; }
+.steps { margin: 10px 0 0 20px; display: grid; gap: 8px; }

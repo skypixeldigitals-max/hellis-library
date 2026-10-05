@@ -25,4 +25,8 @@ insert into public.admins (email) values ('her@email.com');
 
 Then on the site: **Owner login → First time? Create your password**. After that, log in with email and password.
 
-Forgot password: delete that user under Authentication → Users in Supabase, then create the password again on the site.
+Passwords: change your own under **Settings → Change my password**. If one owner forgets theirs, the other owner can set a new one under **Settings → Reset another owner's password** (edge function `reset-owner-password`).
+
+## Covers
+
+Covers picked from Open Library or Google Books are copied into the `covers` storage bucket by the `cache-covers` edge function, so they load fast and don't depend on outside sites. The original link is kept in `cover_src`. The site calls the function automatically after saves; it takes no input and only processes covers already saved in the database.

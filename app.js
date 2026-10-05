@@ -32,6 +32,8 @@
     hourglass: '<path d="M5 22h14M5 2h14M17 22v-4.2a2 2 0 0 0-.6-1.4L12 12l-4.4 4.4a2 2 0 0 0-.6 1.4V22M7 2v4.2a2 2 0 0 0 .6 1.4L12 12l4.4-4.4a2 2 0 0 0 .6-1.4V2"/>',
     image: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>',
     camera: '<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3"/>',
+    sort: '<path d="m3 16 4 4 4-4M7 20V4M21 8l-4-4-4 4M17 4v16"/>',
+    key: '<path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4M21 2l-9.6 9.6"/><circle cx="7.5" cy="15.5" r="5.5"/>',
     sparkle: '<path d="M12 2l2.2 6.8L21 11l-6.8 2.2L12 20l-2.2-6.8L3 11l6.8-2.2z" fill="currentColor" stroke="none"/>',
     feather: '<path d="M12.67 19a2 2 0 0 0 1.42-.59l6.17-6.17a6 6 0 1 0-8.49-8.49L5.6 9.92A2 2 0 0 0 5 11.34V19zM16 8 2 22M17.5 15H9"/>',
   };
@@ -97,6 +99,7 @@
     user: null, admin: false, loaded: false,
     tab: TABS[location.hash.slice(1)] ? location.hash.slice(1) : 'shelf',
     q: '', filter: 'all', pending: null,
+    sort: (() => { try { return localStorage.getItem('shelfSort') || 'series'; } catch { return 'series'; } })(),
   };
   const findBook = (id) => S.books.find((b) => b.id === id);
   const name = () => S.settings.display_name || 'Helli';
@@ -146,7 +149,7 @@
   async function refreshAuth(session) {
     S.user = session?.user || null;
     S.admin = false;
-    if (S.user) { const { data } = await sb.rpc('is_admin'); S.admin = data === true; }    if (!S.admin && !PUBLIC_TABS.includes(S.tab)) S.tab = 'shelf';
+    if (S.user) { const { data } = await sb.rpc('is_admin'); S.admin = data === true; }
     await load();
   }
   document.body.classList.add('is-loading');
@@ -205,12 +208,19 @@
 
   function viewShelf() {
     const F = { all: () => true, reading: (b) => b.status === 'reading', read: (b) => b.status === 'read', unread: (b) => b.status === 'unread', lent: (b) => b.is_lent };
-    const list = S.books.filter(F[S.filter]);
+    const SORTS = {
+      series: (x, y) => (x.series || x.title).localeCompare(y.series || y.title) || (x.series_no || 0) - (y.series_no || 0),
+      author: (x, y) => (x.author || '').localeCompare(y.author || '') || (x.series || x.title).localeCompare(y.series || y.title) || (x.series_no || 0) - (y.series_no || 0),
+      title: (x, y) => x.title.replace(/^(the|a|an) /i, '').localeCompare(y.title.replace(/^(the|a|an) /i, '')),
+      recent: (x, y) => new Date(y.created_at) - new Date(x.created_at),
+    };
+    const list = S.books.filter(F[S.filter]).sort(SORTS[S.sort] || SORTS.series);
     const chips = [['all', 'All'], ['reading', 'Reading'], ['read', 'Read'], ['unread', 'Unread'], ['lent', 'Lent out']]
       .map(([k, l]) => `<button class="chip" data-a="filter" data-f="${k}" aria-pressed="${S.filter === k}">${l}</button>`).join('');
     if (!S.books.length) return `<h2>${hic('shelf')}Shelf</h2>${empty('The shelf is empty', S.admin ? 'Scan a barcode or add your first book.' : 'No books yet. Check back soon.', S.admin ? `<button class="primary" data-a="add">${ic('plus')}Add a book</button>` : '')}`;
     return `<h2>${hic('shelf')}Shelf <span>${S.books.length} book${S.books.length === 1 ? '' : 's'}</span></h2>
-      <div class="filters" role="group" aria-label="Filter books">${chips}</div>
+      <div class="shelf-tools"><div class="filters" role="group" aria-label="Filter books">${chips}</div>
+        <label class="sortbox"><span class="sr">Sort books by</span>${ic('sort')}<select id="sortSel">${[['series', 'Series'], ['author', 'Author'], ['title', 'Title A–Z'], ['recent', 'Recently added']].map(([k, l]) => `<option value="${k}" ${S.sort === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label></div>
       ${list.length ? `<div class="shelf">${list.map((b, i) => `<button class="book" style="--i:${i}" data-a="open" data-id="${b.id}" title="${esc(b.title)}" aria-label="${esc(b.title)}${b.is_lent ? ', lent out' : ''}">${b.is_lent ? `<span class="badge lent">${ic('out')}</span>` : b.status === 'read' ? `<span class="badge read">${ic('check')}</span>` : b.status === 'reading' ? `<span class="badge reading">${ic('book')}</span>` : ''}${cover(b)}</button>`).join('')}${S.filter === 'all' ? `<div class="decor" aria-hidden="true">${PLANT}</div>` : ''}</div>
       <div class="legend"><span><i style="background:var(--ok)"></i>Read</span><span><i style="background:var(--accent)"></i>Reading</span><span><i style="background:var(--warn)"></i>Lent out</span></div>`
         : empty('Nothing here', 'No books match this filter.')}`;
@@ -318,6 +328,27 @@
     if (popPending) { popPending = false; afterPop.splice(0).forEach((f) => f()); return; }
     if (document.body.classList.contains('open')) { sheetEntry = false; closeSheet(); }
   });
+  // Phones: drag a sheet down from its top to close it
+  (() => {
+    let y0 = null, dy = 0;
+    const el = $('#sheet');
+    el.addEventListener('touchstart', (e) => {
+      if (window.innerWidth >= 700 || el.scrollTop > 0) { y0 = null; return; }
+      y0 = e.touches[0].clientY; dy = 0; el.style.transition = 'none';
+    }, { passive: true });
+    el.addEventListener('touchmove', (e) => {
+      if (y0 == null) return;
+      dy = Math.max(0, e.touches[0].clientY - y0);
+      if (dy > 0) el.style.transform = `translateY(${dy}px)`;
+    }, { passive: true });
+    el.addEventListener('touchend', () => {
+      if (y0 == null) return;
+      el.style.transition = ''; el.style.transform = '';
+      if (dy > 110) closeSheet();
+      y0 = null;
+    });
+  })();
+
   // Keep keyboard focus inside an open sheet
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Tab' || !document.body.classList.contains('open')) return;
@@ -460,11 +491,18 @@
     const btn = $('#fsave'); btn.disabled = true; btn.textContent = 'Saving…';
     const q = F.mode === 'add' ? sb.from(F.table).insert(row) : sb.from(F.table).update(row).eq('id', F.id);
     if (!(await save(q))) { btn.disabled = false; syncDest(); return; }
+    cacheCovers();
     if (F.mode === 'add') log({ books: `Added ${row.title}`, wishlist: `Added ${row.title} to the wishlist`, sales: `Listed ${row.title} for sale` }[F.table], row.cover_url);
     const msg = F.mode === 'edit' ? 'Saved' : { books: `Added ${row.title} to your library`, wishlist: `Added ${row.title} to your wishlist`, sales: `Listed ${row.title} for sale` }[F.table];
     const goTab = F.mode === 'add' ? { books: 'shelf', wishlist: 'wish', sales: 'sale' }[F.table] : S.tab;
     closeSheet(); S.tab = goTab; setHash(goTab);
     await load(); toast(msg);
+  }
+
+  // Copy any newly saved outside cover into our own storage (runs in the background, then refreshes)
+  function cacheCovers() {
+    if (!S.admin) return;
+    sb.functions.invoke('cache-covers').then(({ data }) => { if (data?.cached) load(); }).catch(() => {});
   }
 
   // ---------- cover picker ----------
@@ -526,9 +564,10 @@
       <p class="muted" style="margin:-8px 0 12px">${esc(b.title)}</p><div id="cpwrap"></div>
       <div class="sheet-actions"><button class="ghost" data-a="open" data-id="${b.id}">Back</button></div>`);
     mountCoverPicker($('#cpwrap'), {
-      title: b.title, author: b.author, current: b.cover_url,
+      title: b.title, author: b.author, current: b.cover_src || b.cover_url,
       onPick: async (url) => {
-        if (!(await save(sb.from('books').update({ cover_url: url || null }).eq('id', b.id)))) return;
+        if (!(await save(sb.from('books').update({ cover_url: url || null, cover_src: null }).eq('id', b.id)))) return;
+        cacheCovers();
         await load(); openBook(b.id); toast('Cover updated');
       },
     });
@@ -596,7 +635,7 @@
           <span class="errbox" id="loginErr" role="alert" hidden></span>
           <button class="primary wide" type="submit" id="loginBtn">${create ? 'Create password and log in' : 'Log in'}</button>
         </form>
-        <p style="margin-top:14px;text-align:center"><button class="link" data-a="account-mode" data-mode="${create ? 'login' : 'create'}">${create ? 'Already have a password? Log in' : 'First time? Create your password'}</button></p>`);
+        <p style="margin-top:14px;display:flex;justify-content:center;gap:18px;flex-wrap:wrap"><button class="link" data-a="account-mode" data-mode="${create ? 'login' : 'create'}">${create ? 'Already have a password? Log in' : 'First time? Create your password'}</button>${create ? '' : '<button class="link" data-a="forgot">Forgot password?</button>'}</p>`);
       return;
     }
     if (!S.admin) {
@@ -611,6 +650,15 @@
         <div class="field"><label for="scur">Currency</label><select id="scur" name="currency">${Object.keys(CUR).map((c) => `<option value="${c}" ${st.currency === c ? 'selected' : ''}>${c} (${CUR[c]})</option>`).join('')}</select></div>
         <button class="primary wide" type="submit">Save settings</button>
       </form>
+      <details class="pwbox"><summary>${ic('key')}Change my password</summary>
+        <form id="pwForm" class="form"><div class="field"><label for="npw">New password</label><input id="npw" type="password" autocomplete="new-password" minlength="8" required><span class="help">At least 8 characters.</span></div>
+        <div class="field"><label for="npw2">Type it again</label><input id="npw2" type="password" autocomplete="new-password" required></div>
+        <span class="errbox" id="pwErr" role="alert" hidden></span><button class="primary wide" type="submit">Change password</button></form></details>
+      <details class="pwbox"><summary>${ic('key')}Reset another owner's password</summary>
+        <p class="muted" style="margin:8px 14px 12px">For when the other owner forgets theirs. Set a new password here, send it to them, and they can change it in their own Settings.</p>
+        <form id="resetForm" class="form"><div class="field"><label for="remail">Their email</label><input id="remail" type="email" autocomplete="off" required></div>
+        <div class="field"><label for="rpw">New password for them</label><input id="rpw" type="text" autocomplete="off" minlength="8" required><span class="help">At least 8 characters. Shown as text so you can copy it.</span></div>
+        <span class="errbox" id="resetErr" role="alert" hidden></span><button class="primary wide" type="submit">Set their password</button></form></details>
       <div class="sheet-actions"><span class="muted" style="flex:1">${esc(S.user.email)}</span><button class="ghost" data-a="logout">Log out</button></div>`);
   }
 
@@ -689,6 +737,10 @@
       toast(`Deleted ${b.title}`, () => sb.from('books').insert({ ...b, is_lent: false }));
     },
     cover: (t) => openCoverSheet(t.dataset.id),
+    forgot: () => sheet(`<div class="sheet-head"><h3 id="sheetTitle">Forgot your password?</h3>${closeBtn}</div>
+      <p>Ask the other owner of this library to reset it:</p>
+      <ol class="steps"><li>They log in and tap the round initial at the top.</li><li>They open <b>Reset another owner's password</b>, enter your email and a new password, and send it to you.</li><li>You log in with it, then change it under <b>Change my password</b>.</li></ol>
+      <div class="sheet-actions"><button class="ghost" data-a="account-mode" data-mode="login">Back to login</button></div>`),
     'cp-pick': (t) => CP?.onPick(t.dataset.u || null),
     'cp-upload': () => $('#cpfile')?.click(),
     'form-cover': () => {
@@ -720,7 +772,7 @@
       const { data, error } = await sb.from('books').insert(row).select().single();
       if (error) { toast(`Couldn't add it: ${error.message}`); return; }
       await save(sb.from('wishlist').delete().eq('id', w.id));
-      log(`Added ${w.title}`, w.cover_url);
+      log(`Added ${w.title}`, w.cover_url); cacheCovers();
       closeSheet(); await load();
       toast(`${w.title} moved to your library`, async () => { await sb.from('books').delete().eq('id', data.id); await sb.from('wishlist').insert(w); });
     },
@@ -758,6 +810,12 @@
     if (e.target.id === 'prog') $('#progv').textContent = `${e.target.value}%`;
   });
   document.addEventListener('change', async (e) => {
+    if (e.target.id === 'sortSel') {
+      S.sort = e.target.value;
+      try { localStorage.setItem('shelfSort', S.sort); } catch { /* private mode: keep for this visit only */ }
+      renderView(); $('#sortSel')?.focus();
+      return;
+    }
     if (e.target.id === 'cpfile' && e.target.files[0]) {
       const msg = $('#cpmsg');
       msg.textContent = 'Uploading your photo…';
@@ -793,6 +851,29 @@
       const { error } = await sb.auth.signInWithPassword({ email, password });
       if (error) return fail(/invalid/i.test(error.message) ? "That email and password don't match. Check for typos and try again." : `Couldn't log in: ${error.message}`);
       closeSheet(); toast(`Welcome, ${name()}!`);
+    }
+    if (e.target.id === 'pwForm') {
+      const p1 = $('#npw').value, p2 = $('#npw2').value, err = $('#pwErr');
+      const fail = (m) => { err.hidden = false; err.textContent = m; };
+      if (p1.length < 8) return fail('The password needs at least 8 characters.');
+      if (p1 !== p2) return fail("The two passwords don't match. Type them again.");
+      const { error } = await sb.auth.updateUser({ password: p1 });
+      if (error) return fail(`Couldn't change it: ${error.message}`);
+      closeSheet(); toast('Password changed');
+    }
+    if (e.target.id === 'resetForm') {
+      const email = $('#remail').value.trim(), password = $('#rpw').value, err = $('#resetErr'), btn = e.target.querySelector('button[type=submit]');
+      const fail = (m) => { err.hidden = false; err.textContent = m; btn.disabled = false; btn.textContent = 'Set their password'; };
+      if (!email.includes('@')) return fail('Enter their full email address.');
+      if (password.length < 8) return fail('The new password needs at least 8 characters.');
+      btn.disabled = true; btn.textContent = 'Saving…';
+      const { data, error } = await sb.functions.invoke('reset-owner-password', { body: { email, password } });
+      if (error) {
+        let msg = error.message;
+        try { msg = (await error.context.json()).error || msg; } catch { /* keep generic message */ }
+        return fail(msg);
+      }
+      if (data?.ok) { closeSheet(); toast(`Done. Send ${email} their new password.`); }
     }
     if (e.target.id === 'setForm') {
       const fd = Object.fromEntries(new FormData(e.target));
