@@ -27,6 +27,14 @@ Then on the site: **Owner login → First time? Create your password**. After th
 
 Passwords: change your own under **Settings → Change my password**. If one owner forgets theirs, the other owner can set a new one under **Settings → Reset another owner's password** (edge function `reset-owner-password`).
 
+## Sarasavi search
+
+Searching the site also shows matching books from [Sarasavi](https://www.sarasavi.lk), each linking to that book's page there for price and stock.
+
+- Titles and links come only from Sarasavi's **public sitemap**, which their robots.txt allows. Their product pages, search, API and accounts are never fetched, so prices and stock are not copied.
+- `sync-sarasavi` (edge function) loads one sitemap part per call into `public.sarasavi_catalog` and refuses to refetch any part more than once every 6 days. A `pg_cron` job (`sync-sarasavi-catalog`) calls it every 15 minutes between 02:00 and 05:59 UTC; when nothing is due it returns without contacting Sarasavi.
+- `search_sarasavi(q)` (SQL function) returns the 8 best title matches.
+
 ## Covers
 
 Covers picked from Open Library or Google Books are copied into the `covers` storage bucket by the `cache-covers` edge function, so they load fast and don't depend on outside sites. The original link is kept in `cover_src`. The site calls the function automatically after saves; it takes no input and only processes covers already saved in the database.

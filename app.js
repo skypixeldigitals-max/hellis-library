@@ -275,7 +275,7 @@
     return `<h2>${hic('wish')}Wishlist <span>only you can see this</span></h2>${tools}<div class="cards">${S.wish.map((w, i) => `<article class="item" style="--i:${i}">${cover(w, 'md')}<div class="grow">
       <span class="t">${esc(w.title)}</span><span class="a">${esc(seriesLine(w))}</span>
       ${fillsGap(w) ? '<span class="pill lav">Fills a gap in your series</span>' : ''}
-      <div class="actions"><button class="ghost" data-a="got" data-id="${w.id}">${ic('check')}Got it</button><button class="ghost" data-a="wish-del" data-id="${w.id}">Remove</button></div>
+      <div class="actions"><button class="ghost" data-a="got" data-id="${w.id}">${ic('check')}Got it</button><button class="ghost" data-a="sv-find" data-q="${esc(w.title)}">${ic('bag')}Sarasavi</button><button class="ghost" data-a="wish-del" data-id="${w.id}">Remove</button></div>
     </div></article>`).join('')}</div>`;
   }
   const fillsGap = (w) => w.series && S.books.some((b) => b.series === w.series) && !S.books.some((b) => b.series === w.series && b.series_no === w.series_no);
@@ -300,6 +300,38 @@
     h += sale.map((s) => `<button class="verdict sale" data-a="tab" data-tab="sale">${cover(s, 'sm')}<span class="grow"><span class="head">${ic('sale')} For sale · ${esc(price(s.price))}</span>${esc(s.title)}<small>${esc(cap(s.condition))}</small></span></button>`).join('');
     if (!own.length && !wish.length) h = `<div class="verdict no"><span class="bag">${ic('bag')}</span><span class="grow"><span class="head">Not in the library</span><small>Nothing matches "${esc(S.q)}". ${S.admin ? 'Safe to buy.' : ''}</small></span>${S.admin ? `<button class="ghost" data-a="add" data-q="${esc(S.q)}">Add it</button>` : ''}</div>` + h;
     box.innerHTML = h;
+  }
+
+  // ---------- Sarasavi (titles + links from their public sitemap; prices stay on their site) ----------
+  let svTimer = null, svSeq = 0;
+  function searchSarasavi() {
+    clearTimeout(svTimer);
+    const q = S.q.trim(), box = $('#sv');
+    if (norm(q).length < 3) { box.innerHTML = ''; return; }
+    svTimer = setTimeout(async () => {
+      const seq = ++svSeq;
+      const { data, error } = await sb.rpc('search_sarasavi', { q });
+      if (seq !== svSeq || S.q.trim() !== q) return;
+      const rows = (data || []).filter((r) => /^[\w\-().%']+$/.test(r.slug)).slice(0, 5);
+      if (error || !rows.length) {
+        box.innerHTML = error ? '' : `<p class="sv-head">${ic('bag')}At Sarasavi<span>No match in their catalogue</span></p>`;
+        return;
+      }
+      box.innerHTML = `<p class="sv-head">${ic('bag')}At Sarasavi<span>Tap for price and stock</span></p>` + rows.map((r, i) => `
+        <a class="verdict sv-item" style="animation-delay:${i * 40}ms" href="https://www.sarasavi.lk/product/${esc(r.slug)}" target="_blank" rel="noopener">
+          <span class="sv-cov" data-t="${esc(r.title)}">${cover({ title: r.title, author: '', cover_url: null }, 'sm')}</span>
+          <span class="grow"><span class="t">${esc(r.title)}</span><small>Open at Sarasavi</small></span>${ic('out')}</a>`).join('');
+      // Fill in covers from Open Library (best effort, first few only)
+      box.querySelectorAll('.sv-cov').forEach(async (el, i) => {
+        if (i > 3) return;
+        const t = el.dataset.t.split(' – ').pop();
+        try {
+          const j = await (await fetch(`https://openlibrary.org/search.json?title=${encodeURIComponent(t)}&fields=cover_i&limit=1`)).json();
+          const id = j.docs?.[0]?.cover_i;
+          if (id && el.isConnected) el.innerHTML = cover({ title: t, author: '', cover_url: olCover(id) }, 'sm');
+        } catch { /* keep the plain spine */ }
+      });
+    }, 350);
   }
 
   // ---------- sheet ----------
@@ -737,6 +769,7 @@
       toast(`Deleted ${b.title}`, () => sb.from('books').insert({ ...b, is_lent: false }));
     },
     cover: (t) => openCoverSheet(t.dataset.id),
+    'sv-find': (t) => { const q = $('#q'); q.value = t.dataset.q; S.q = q.value; renderResults(); searchSarasavi(); window.scrollTo({ top: 0, behavior: 'smooth' }); q.focus({ preventScroll: true }); },
     forgot: () => sheet(`<div class="sheet-head"><h3 id="sheetTitle">Forgot your password?</h3>${closeBtn}</div>
       <p>Ask the other owner of this library to reset it:</p>
       <ol class="steps"><li>They log in and tap the round initial at the top.</li><li>They open <b>Reset another owner's password</b>, enter your email and a new password, and send it to you.</li><li>You log in with it, then change it under <b>Change my password</b>.</li></ol>
@@ -802,7 +835,7 @@
   $('#scanBtn').addEventListener('click', openScanner);
   // Shadow under the search bar once it sticks to the top on phones
   new IntersectionObserver(([e]) => $('.finderbar').classList.toggle('stuck', !e.isIntersecting)).observe($('.top'));
-  $('#q').addEventListener('input', (e) => { S.q = e.target.value; renderResults(); });
+  $('#q').addEventListener('input', (e) => { S.q = e.target.value; renderResults(); searchSarasavi(); });
 
   document.addEventListener('input', (e) => {
     if (e.target.id === 'olq') { clearTimeout(olTimer); const v = e.target.value; olTimer = setTimeout(() => searchOnline(v), 380); }

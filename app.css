@@ -402,3 +402,15 @@ h2 > span { margin-left: auto; }
 .pwbox > *:not(summary) { margin-inline: 14px; }
 .pwbox form { padding-bottom: 14px; }
 .steps { margin: 10px 0 0 20px; display: grid; gap: 8px; }
+
+/* ---------- Sarasavi results ---------- */
+#sv:empty { display: none; }
+#sv { display: grid; gap: 6px; }
+.sv-head { display: flex; align-items: center; gap: 6px; font-weight: 700; color: var(--accent); font-size: 15px; margin-top: 4px; }
+.sv-head svg.i { width: 16px; height: 16px; }
+.sv-head span { margin-left: auto; font-weight: 400; color: var(--muted); font-size: 13px; }
+.sv-item { background: var(--card); border: 1px solid var(--line); color: var(--text); text-decoration: none; padding: 8px 12px; }
+.sv-item:hover { border-color: var(--accent); }
+.sv-item .t { display: block; font-weight: 600; line-height: 1.25; }
+.sv-item > svg.i { color: var(--muted); width: 16px; height: 16px; }
+.sv-cov { flex: none; }
