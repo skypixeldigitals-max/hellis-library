@@ -452,12 +452,19 @@
   }
 
   // ---------- account ----------
-  function openAccount() {
+  function openAccount(mode = 'login') {
     if (!S.user) {
-      sheet(`<div class="sheet-head"><h3 id="sheetTitle">Owner login</h3>${closeBtn}</div>
-        <p class="muted" style="margin-bottom:14px">Only ${esc(name())} can add or edit books. Enter your email and we'll send you a login link.</p>
-        <form id="loginForm" class="form"><div class="field"><label for="email">Email</label><input id="email" name="email" type="email" autocomplete="email" required autofocus></div>
-        <span class="errbox" id="loginErr" hidden></span><button class="primary wide" type="submit" id="loginBtn">Send login link</button></form>`);
+      const create = mode === 'create';
+      sheet(`<div class="sheet-head"><h3 id="sheetTitle">${create ? 'Create your password' : 'Owner login'}</h3>${closeBtn}</div>
+        <p class="muted" style="margin-bottom:14px">${create ? 'First time here? Use the email you gave for this library and choose a password.' : `Only ${esc(name())} can add or edit books.`}</p>
+        <form id="loginForm" class="form" data-mode="${mode}">
+          <div class="field"><label for="email">Email</label><input id="email" name="email" type="email" autocomplete="email" required autofocus></div>
+          <div class="field"><label for="pw">Password</label><input id="pw" name="password" type="password" autocomplete="${create ? 'new-password' : 'current-password'}" minlength="8" required>${create ? '<span class="help">At least 8 characters.</span>' : ''}</div>
+          ${create ? '<div class="field"><label for="pw2">Type it again</label><input id="pw2" name="password2" type="password" autocomplete="new-password" required></div>' : ''}
+          <span class="errbox" id="loginErr" role="alert" hidden></span>
+          <button class="primary wide" type="submit" id="loginBtn">${create ? 'Create password and log in' : 'Log in'}</button>
+        </form>
+        <p style="margin-top:14px;text-align:center"><button class="link" data-a="account-mode" data-mode="${create ? 'login' : 'create'}">${create ? 'Already have a password? Log in' : 'First time? Create your password'}</button></p>`);
       return;
     }
     if (!S.admin) {
@@ -494,6 +501,7 @@
     close: () => closeSheet(),
     scan: () => openScanner(),
     account: () => openAccount(),
+    'account-mode': (t) => openAccount(t.dataset.mode),
     logout: async () => { closeSheet(); await sb.auth.signOut(); toast('Logged out'); },
     add: (t) => openForm({ table: t.dataset.dest || 'books', q: t.dataset.q || '' }),
     'add-pending': (t) => openForm({ table: t.dataset.dest, row: S.pending || {} }),
@@ -589,7 +597,7 @@
     if (t && A[t.dataset.a]) { e.preventDefault(); A[t.dataset.a](t, e); return; }
     if (e.target.id === 'scrim') closeSheet();
   });
-  $('#avatar').addEventListener('click', openAccount);
+  $('#avatar').addEventListener('click', () => openAccount());
   $('#addBtn').addEventListener('click', () => openForm());
   $('#scanBtn').addEventListener('click', openScanner);
   $('#q').addEventListener('input', (e) => { S.q = e.target.value; renderResults(); });
@@ -610,12 +618,24 @@
     if (e.target.id === 'bookForm') submitForm();
     if (e.target.id === 'isbnForm') { const v = $('#isbnIn').value.trim(); if (v) { scanDone = true; stopScanner(); checkIsbn(v); } }
     if (e.target.id === 'loginForm') {
-      const email = $('#email').value.trim(), btn = $('#loginBtn'), err = $('#loginErr');
-      if (!email.includes('@')) { err.hidden = false; err.textContent = 'Enter a full email address.'; return; }
-      btn.disabled = true; btn.textContent = 'Sending…';
-      const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname } });
-      if (error) { err.hidden = false; err.textContent = `Couldn't send the link: ${error.message}`; btn.disabled = false; btn.textContent = 'Send login link'; return; }
-      $('#sheet').innerHTML = `<div class="grab"></div><div class="sheet-head"><h3 id="sheetTitle">Check your email</h3>${closeBtn}</div><p>We sent a login link to <b>${esc(email)}</b>. Open it on this device to start editing.</p>`;
+      const create = e.target.dataset.mode === 'create';
+      const email = $('#email').value.trim(), password = $('#pw').value, btn = $('#loginBtn'), err = $('#loginErr');
+      const fail = (msg) => { err.hidden = false; err.textContent = msg; btn.disabled = false; btn.textContent = create ? 'Create password and log in' : 'Log in'; };
+      if (!email.includes('@')) return fail('Enter a full email address.');
+      if (password.length < 8) return fail('The password needs at least 8 characters.');
+      if (create && password !== $('#pw2').value) return fail("The two passwords don't match. Type them again.");
+      btn.disabled = true; btn.textContent = create ? 'Creating…' : 'Logging in…';
+      if (create) {
+        const { error } = await sb.auth.signUp({ email, password });
+        if (error) {
+          if (/already|registered/i.test(error.message)) return fail('This email already has a password. Use "Log in" instead.');
+          if (/database error|owner/i.test(error.message)) return fail("This email isn't set up as an owner of this library.");
+          // Other errors (e.g. the welcome email failing to send) can still leave a usable account, so try logging in.
+        }
+      }
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) return fail(/invalid/i.test(error.message) ? "That email and password don't match. Check for typos and try again." : `Couldn't log in: ${error.message}`);
+      closeSheet(); toast(`Welcome, ${name()}!`);
     }
     if (e.target.id === 'setForm') {
       const fd = Object.fromEntries(new FormData(e.target));
