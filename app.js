@@ -28,8 +28,36 @@
     plus: '<path d="M5 12h14M12 5v14"/>',
     chat: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/>',
     link: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+    bag: '<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0"/>',
+    hourglass: '<path d="M5 22h14M5 2h14M17 22v-4.2a2 2 0 0 0-.6-1.4L12 12l-4.4 4.4a2 2 0 0 0-.6 1.4V22M7 2v4.2a2 2 0 0 0 .6 1.4L12 12l4.4-4.4a2 2 0 0 0 .6-1.4V2"/>',
+    sparkle: '<path d="M12 2l2.2 6.8L21 11l-6.8 2.2L12 20l-2.2-6.8L3 11l6.8-2.2z" fill="currentColor" stroke="none"/>',
+    feather: '<path d="M12.67 19a2 2 0 0 0 1.42-.59l6.17-6.17a6 6 0 1 0-8.49-8.49L5.6 9.92A2 2 0 0 0 5 11.34V19zM16 8 2 22M17.5 15H9"/>',
   };
   const ic = (n) => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${ICON[n]}</svg>`;
+  const hic = (n) => `<i class="h-ic" aria-hidden="true">${ic(n)}</i>`;
+
+  // Small illustrations
+  const PLANT = `<svg viewBox="0 0 60 92" aria-hidden="true">
+    <g stroke="#6b7d4a" stroke-width="1.6" stroke-linecap="round" fill="none"><path d="M30 58c-1-14-6-26-12-36"/><path d="M30 58c1-16 4-30 10-42"/><path d="M30 58c0-12 0-22 1-30"/></g>
+    <g fill="#a58bd0">${[[19, 24], [17.5, 20], [16, 16], [39, 18], [40.5, 14], [42, 10], [31, 30], [31, 26], [31.2, 22]].map(([x, y]) => `<ellipse cx="${x}" cy="${y}" rx="1.8" ry="2.8"/>`).join('')}</g>
+    <g fill="#7d8f5a"><ellipse cx="22" cy="50" rx="7" ry="3" transform="rotate(-30 22 50)"/><ellipse cx="38" cy="49" rx="7" ry="3" transform="rotate(28 38 49)"/></g>
+    <path d="M15 62h30l-4 26H19z" fill="#b5673a"/><rect x="12" y="56" width="36" height="8" rx="2" fill="#c97a4a"/><path d="M19 74h22" stroke="#e0a07a" stroke-width="1.5"/>
+  </svg>`;
+  const OPEN_BOOK = `<svg class="illo" viewBox="0 0 140 90" aria-hidden="true">
+    <path d="M70 26c-14-10-34-12-52-8v54c18-4 38-2 52 8z" fill="#fbf4e6" stroke="#cfb894" stroke-width="2"/>
+    <path d="M70 26c14-10 34-12 52-8v54c-18-4-38-2-52 8z" fill="#fbf4e6" stroke="#cfb894" stroke-width="2"/>
+    <path d="M70 26v54" stroke="#7356a0" stroke-width="3"/>
+    <g stroke="#e6d6bb" stroke-width="2" stroke-linecap="round"><path d="M28 32c10-2 22-1 32 3M28 42c10-2 22-1 32 3M28 52c10-2 22-1 32 3M80 35c10-4 22-5 32-3M80 45c10-4 22-5 32-3M80 55c10-4 22-5 32-3"/></g>
+    <g fill="#a58bd0"><path d="M24 6l1.6 5 5 1.6-5 1.6-1.6 5-1.6-5-5-1.6 5-1.6z"/><path d="M116 2l1.2 3.8 3.8 1.2-3.8 1.2-1.2 3.8-1.2-3.8-3.8-1.2 3.8-1.2z"/><path d="M98 12l.9 2.7 2.7.9-2.7.9-.9 2.7-.9-2.7-2.7-.9 2.7-.9z"/></g>
+  </svg>`;
+  const QUOTES = [
+    ['I declare after all there is no enjoyment like reading!', 'Jane Austen'],
+    ['There is no Frigate like a Book to take us Lands away.', 'Emily Dickinson'],
+    ['I cannot live without books.', 'Thomas Jefferson'],
+    ['Reading is to the mind what exercise is to the body.', 'Joseph Addison'],
+    ['Books are the quietest and most constant of friends.', 'Charles W. Eliot'],
+    ['A room without books is like a body without a soul.', 'Cicero'],
+  ];
 
   const cover = (b, size = '') => {
     const spine = `<span class="spine"${b.cover_url ? ' hidden' : ''}><span>${esc(b.title)}</span><small>${esc(b.author)}</small></span>`;
@@ -124,7 +152,11 @@
   }
 
   // ---------- render ----------
-  function renderAll() { renderHeader(); renderSide(); renderNav(); renderView(); renderResults(); renderFoot(); }
+  function renderAll() { renderHeader(); renderSide(); renderNav(); renderView(); renderResults(); renderQuote(); renderFoot(); }
+  function renderQuote() {
+    const [q, who] = QUOTES[Math.floor(Date.now() / 864e5) % QUOTES.length];
+    $('#quote').innerHTML = `${ic('feather')}<blockquote>${esc(q)}</blockquote><figcaption>${esc(who)}</figcaption>`;
+  }
 
   function renderHeader() {
     document.querySelectorAll('.owner-name').forEach((el) => { el.textContent = name(); });
@@ -138,10 +170,10 @@
   function renderSide() {
     const read = S.books.filter((b) => b.status === 'read').length;
     const lent = S.books.filter((b) => b.is_lent).length;
-    $('#stats').innerHTML = [[S.books.length, 'Books'], [read, 'Read'], [lent, 'Lent out']]
-      .map(([n, l]) => `<div class="stat"><b data-n="${n}">${n}</b><span>${l}</span></div>`).join('');
+    $('#stats').innerHTML = [[S.books.length, 'Books', 'shelf'], [read, 'Read', 'check'], [lent, 'Lent out', 'out']]
+      .map(([n, l, i]) => `<div class="stat"><i class="stat-ic" aria-hidden="true">${ic(i)}</i><b data-n="${n}">${n}</b><span>${l}</span></div>`).join('');
     const reading = S.books.find((b) => b.status === 'reading');
-    $('#now').innerHTML = reading ? `<button class="now" data-a="open" data-id="${reading.id}">${cover(reading, 'md')}<span style="flex:1;min-width:0"><span class="k">Currently reading</span><span class="t" style="display:block">${esc(reading.title)}</span><span class="bar" style="display:block"><i style="width:${reading.progress || 4}%"></i></span><small>${reading.progress || 0}% · ${esc(seriesLine(reading))}</small></span></button>` : '';
+    $('#now').innerHTML = reading ? `<button class="now" data-a="open" data-id="${reading.id}"><svg class="ribbon" viewBox="0 0 20 34" aria-hidden="true"><path d="M0 0h20v34l-10-8-10 8z"/></svg>${cover(reading, 'md')}<span style="flex:1;min-width:0"><span class="k">${ic('sparkle')} Currently reading</span><span class="t" style="display:block">${esc(reading.title)}</span><span class="bar" style="display:block"><i style="width:${reading.progress || 4}%"></i></span><small>${reading.progress || 0}% · ${esc(seriesLine(reading))}</small></span></button>` : '';
   }
 
   function renderNav() {
@@ -170,18 +202,18 @@
     const list = S.books.filter(F[S.filter]);
     const chips = [['all', 'All'], ['reading', 'Reading'], ['read', 'Read'], ['unread', 'Unread'], ['lent', 'Lent out']]
       .map(([k, l]) => `<button class="chip" data-a="filter" data-f="${k}" aria-pressed="${S.filter === k}">${l}</button>`).join('');
-    if (!S.books.length) return `<h2>Shelf</h2>${empty('The shelf is empty', S.admin ? 'Scan a barcode or add your first book.' : 'No books yet. Check back soon.', S.admin ? `<button class="primary" data-a="add">${ic('plus')}Add a book</button>` : '')}`;
-    return `<h2>Shelf <span>${S.books.length} book${S.books.length === 1 ? '' : 's'}</span></h2>
+    if (!S.books.length) return `<h2>${hic('shelf')}Shelf</h2>${empty('The shelf is empty', S.admin ? 'Scan a barcode or add your first book.' : 'No books yet. Check back soon.', S.admin ? `<button class="primary" data-a="add">${ic('plus')}Add a book</button>` : '')}`;
+    return `<h2>${hic('shelf')}Shelf <span>${S.books.length} book${S.books.length === 1 ? '' : 's'}</span></h2>
       <div class="filters" role="group" aria-label="Filter books">${chips}</div>
-      ${list.length ? `<div class="shelf">${list.map((b, i) => `<button class="book" style="--i:${i}" data-a="open" data-id="${b.id}" aria-label="${esc(b.title)}${b.is_lent ? ', lent out' : ''}">${b.is_lent ? `<span class="badge lent">${ic('out')}</span>` : b.status === 'read' ? `<span class="badge read">${ic('check')}</span>` : b.status === 'reading' ? `<span class="badge reading">${ic('book')}</span>` : ''}${cover(b)}</button>`).join('')}</div>
+      ${list.length ? `<div class="shelf">${list.map((b, i) => `<button class="book" style="--i:${i}" data-a="open" data-id="${b.id}" aria-label="${esc(b.title)}${b.is_lent ? ', lent out' : ''}">${b.is_lent ? `<span class="badge lent">${ic('out')}</span>` : b.status === 'read' ? `<span class="badge read">${ic('check')}</span>` : b.status === 'reading' ? `<span class="badge reading">${ic('book')}</span>` : ''}${cover(b)}</button>`).join('')}${S.filter === 'all' ? `<div class="decor" aria-hidden="true">${PLANT}</div>` : ''}</div>
       <div class="legend"><span><i style="background:var(--ok)"></i>Read</span><span><i style="background:var(--accent)"></i>Reading</span><span><i style="background:var(--warn)"></i>Lent out</span></div>`
         : empty('Nothing here', 'No books match this filter.')}`;
   }
 
   function viewSeries() {
     const names = [...new Set(S.books.map((b) => b.series).filter(Boolean))];
-    if (!names.length) return `<h2>Series</h2>${empty('No series yet', 'Add a series name and number to a book and it shows up here, with any missing books.')}`;
-    return `<h2>Series <span>dashed = not owned yet</span></h2>` + names.map((s, i) => {
+    if (!names.length) return `<h2>${hic('series')}Series</h2>${empty('No series yet', 'Add a series name and number to a book and it shows up here, with any missing books.')}`;
+    return `<h2>${hic('series')}Series <span>dashed = not owned yet</span></h2>` + names.map((s, i) => {
       const own = S.books.filter((b) => b.series === s);
       const wish = S.wish.filter((w) => w.series === s);
       const total = Math.max(...own.map((b) => b.series_total || 0), ...own.map((b) => b.series_no || 0), ...wish.map((w) => w.series_no || 0), 1);
@@ -202,13 +234,13 @@
     const list = [...S.sales].sort((a, b) => order[a.status] - order[b.status]);
     const avail = S.sales.filter((s) => s.status === 'available').length;
     const tools = S.admin ? `<div class="filters"><button class="primary" data-a="add" data-dest="sales">${ic('plus')}List a book for sale</button><button class="ghost" data-a="copylink">${ic('link')}Copy link to this page</button></div>` : '';
-    if (!list.length) return `<h2>For sale</h2>${tools}${empty('Nothing for sale right now', S.admin ? 'List a book and share the link with friends.' : 'Check back later.')}`;
-    const statusPill = { available: '<span class="pill ok">Available</span>', reserved: '<span class="pill warn">Reserved</span>', sold: '<span class="pill grey">Sold</span>' };
-    return `<h2>For sale <span>${avail} available</span></h2>${tools}
+    if (!list.length) return `<h2>${hic('sale')}For sale</h2>${tools}${empty('Nothing for sale right now', S.admin ? 'List a book and share the link with friends.' : 'Check back later.')}`;
+    const statusPill = { available: `<span class="pill ok">${ic('check')}Available</span>`, reserved: `<span class="pill warn">${ic('hourglass')}Reserved</span>`, sold: `<span class="pill grey">${ic('sale')}Sold</span>` };
+    return `<h2>${hic('sale')}For sale <span>${avail} available</span></h2>${tools}
       <div class="cards">${list.map((s, i) => `<article class="item${s.status === 'sold' ? ' sold' : ''}" style="--i:${i}">${cover(s, 'md')}<div class="grow">
         <span class="t">${esc(s.title)}</span><span class="a">${esc(s.author)}</span>
         <span class="price">${esc(price(s.price))}</span>
-        <span style="display:flex;gap:6px;flex-wrap:wrap">${statusPill[s.status]}<span class="pill lav">${esc(cap(s.condition))}</span></span>
+        <span style="display:flex;gap:6px;flex-wrap:wrap">${statusPill[s.status]}<span class="pill lav">${s.condition === 'like new' ? ic('sparkle') : ''}${esc(cap(s.condition))}</span></span>
         ${s.note ? `<span class="note-line">${esc(s.note)}</span>` : ''}
         <div class="actions">${S.admin ? `<button class="ghost" data-a="edit-sale" data-id="${s.id}">Edit</button>${s.status !== 'sold' ? `<button class="ghost" data-a="sale-status" data-id="${s.id}" data-st="${s.status === 'available' ? 'reserved' : 'sold'}">Mark ${s.status === 'available' ? 'reserved' : 'sold'}</button>` : `<button class="ghost" data-a="sale-status" data-id="${s.id}" data-st="available">Available again</button>`}` : waButton(s)}</div>
       </div></article>`).join('')}</div>`;
@@ -223,8 +255,8 @@
 
   function viewWish() {
     const tools = `<div class="filters"><button class="primary" data-a="add" data-dest="wishlist">${ic('plus')}Add to wishlist</button></div>`;
-    if (!S.wish.length) return `<h2>Wishlist <span>only you can see this</span></h2>${tools}${empty('Your wishlist is empty', 'Add books you want, and the search will remind you when you spot one in a shop.')}`;
-    return `<h2>Wishlist <span>only you can see this</span></h2>${tools}<div class="cards">${S.wish.map((w, i) => `<article class="item" style="--i:${i}">${cover(w, 'md')}<div class="grow">
+    if (!S.wish.length) return `<h2>${hic('wish')}Wishlist <span>only you can see this</span></h2>${tools}${empty('Your wishlist is empty', 'Add books you want, and the search will remind you when you spot one in a shop.')}`;
+    return `<h2>${hic('wish')}Wishlist <span>only you can see this</span></h2>${tools}<div class="cards">${S.wish.map((w, i) => `<article class="item" style="--i:${i}">${cover(w, 'md')}<div class="grow">
       <span class="t">${esc(w.title)}</span><span class="a">${esc(seriesLine(w))}</span>
       ${fillsGap(w) ? '<span class="pill lav">Fills a gap in your series</span>' : ''}
       <div class="actions"><button class="ghost" data-a="got" data-id="${w.id}">${ic('check')}Got it</button><button class="ghost" data-a="wish-del" data-id="${w.id}">Remove</button></div>
@@ -233,11 +265,11 @@
   const fillsGap = (w) => w.series && S.books.some((b) => b.series === w.series) && !S.books.some((b) => b.series === w.series && b.series_no === w.series_no);
 
   function viewFeed() {
-    if (!S.feed.length) return `<h2>Activity</h2>${empty('Nothing yet', 'Adding, finishing and lending books shows up here.')}`;
-    return `<h2>Activity <span>only you can see this</span></h2><div class="feed">${S.feed.map((e, i) => `<div class="ev" style="--i:${i}">${cover({ title: '', author: '', cover_url: e.cover_url }, 'sm')}<div><p>${esc(e.text)}</p><time>${ago(e.created_at)}</time></div></div>`).join('')}</div>`;
+    if (!S.feed.length) return `<h2>${hic('feed')}Activity</h2>${empty('Nothing yet', 'Adding, finishing and lending books shows up here.')}`;
+    return `<h2>${hic('feed')}Activity <span>only you can see this</span></h2><div class="feed">${S.feed.map((e, i) => `<div class="ev" style="--i:${i}">${cover({ title: '', author: '', cover_url: e.cover_url }, 'sm')}<div><p>${esc(e.text)}</p><time>${ago(e.created_at)}</time></div></div>`).join('')}</div>`;
   }
 
-  const empty = (t, d, action = '') => `<div class="empty"><b>${t}</b><span>${d}</span>${action}</div>`;
+  const empty = (t, d, action = '') => `<div class="empty">${OPEN_BOOK}<b>${t}</b><span>${d}</span>${action}</div>`;
 
   function renderResults() {
     const q = norm(S.q), box = $('#results');
@@ -248,7 +280,7 @@
     let h = own.map((b) => `<button class="verdict own" data-a="open" data-id="${b.id}">${cover(b, 'sm')}<span class="grow"><span class="head">${ic('check')} ${S.admin ? 'You own this' : `${esc(name())} has this`}</span>${esc(b.title)}<small>${esc(seriesLine(b))}${b.is_lent ? ' · lent out' : ''}</small></span></button>`).join('');
     h += wish.map((w) => `<div class="verdict wish">${cover(w, 'sm')}<span class="grow"><span class="head">${ic('wish')} Not owned, on your wishlist</span>${esc(w.title)}<small>${esc(seriesLine(w))}${fillsGap(w) ? ' · fills a gap' : ''}</small></span></div>`).join('');
     h += sale.map((s) => `<button class="verdict sale" data-a="tab" data-tab="sale">${cover(s, 'sm')}<span class="grow"><span class="head">${ic('sale')} For sale · ${esc(price(s.price))}</span>${esc(s.title)}<small>${esc(cap(s.condition))}</small></span></button>`).join('');
-    if (!own.length && !wish.length) h = `<div class="verdict no"><span class="muted">${ic('info')}</span><span class="grow"><span class="head">Not in the library</span><small>Nothing matches "${esc(S.q)}". ${S.admin ? 'Safe to buy.' : ''}</small></span>${S.admin ? `<button class="ghost" data-a="add" data-q="${esc(S.q)}">Add it</button>` : ''}</div>` + h;
+    if (!own.length && !wish.length) h = `<div class="verdict no"><span class="bag">${ic('bag')}</span><span class="grow"><span class="head">Not in the library</span><small>Nothing matches "${esc(S.q)}". ${S.admin ? 'Safe to buy.' : ''}</small></span>${S.admin ? `<button class="ghost" data-a="add" data-q="${esc(S.q)}">Add it</button>` : ''}</div>` + h;
     box.innerHTML = h;
   }
 
@@ -598,6 +630,10 @@
     if (e.target.id === 'scrim') closeSheet();
   });
   $('#avatar').addEventListener('click', () => openAccount());
+  window.addEventListener('hashchange', () => {
+    const t = location.hash.slice(1);
+    if (TABS[t] && (S.admin || PUBLIC_TABS.includes(t)) && t !== S.tab) { S.tab = t; renderNav(); renderView(); }
+  });
   $('#addBtn').addEventListener('click', () => openForm());
   $('#scanBtn').addEventListener('click', openScanner);
   // Shadow under the search bar once it sticks to the top on phones

@@ -18,9 +18,19 @@
 <div class="layout">
   <aside class="side">
     <header class="top">
-      <div>
+      <div class="brandrow">
+        <svg class="mark" viewBox="0 0 48 48" aria-hidden="true">
+          <path d="M27 20c2-5 5-9.5 9.5-13" fill="none" stroke="#6b7d4a" stroke-width="1.6" stroke-linecap="round"/>
+          <g fill="#a58bd0"><ellipse cx="30.2" cy="14.6" rx="1.5" ry="2.5" transform="rotate(35 30.2 14.6)"/><ellipse cx="32.6" cy="11.4" rx="1.5" ry="2.5" transform="rotate(42 32.6 11.4)"/><ellipse cx="35" cy="8.6" rx="1.4" ry="2.3" transform="rotate(48 35 8.6)"/><ellipse cx="28.4" cy="17.6" rx="1.5" ry="2.4" transform="rotate(30 28.4 17.6)"/></g>
+          <rect x="6" y="20" width="30" height="7" rx="1.6" fill="#7d8f5a"/><rect x="10" y="20" width="2" height="7" fill="#e7ecd6" opacity=".7"/>
+          <rect x="10" y="27" width="29" height="8" rx="1.6" fill="#8a5a33"/><rect x="33" y="27" width="2" height="8" fill="#f1d9b5" opacity=".7"/>
+          <rect x="7" y="35" width="34" height="8" rx="1.6" fill="#7356a0"/><rect x="11" y="35" width="2" height="8" fill="#d9c6f2"/><rect x="15" y="35" width="1" height="8" fill="#d9c6f2"/>
+        </svg>
+        <svg class="twinkle" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l2.2 6.8L21 11l-6.8 2.2L12 20l-2.2-6.8L3 11l6.8-2.2z"/></svg>
+        <div>
         <h1 class="brand"><span class="owner-name">Helli</span>'s Library</h1>
         <p class="hello">Check before you buy.</p>
+        </div>
       </div>
       <button class="avatar" id="avatar" aria-label="Account and settings">H</button>
     </header>
@@ -53,13 +63,14 @@
       </div>
     </div>
     <div id="view"></div>
+    <figure class="quote" id="quote"></figure>
     <footer class="foot" id="foot"></footer>
   </main>
 </div>
 
 <div class="scrim" id="scrim"></div>
 <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle"></div>
-<div class="toast" id="toast" role="status" aria-live="polite"><span class="msg"></span><button id="undoBtn" type="button">Undo</button></div>
+<div class="toast" id="toast" role="status" aria-live="polite"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7v14M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg><span class="msg"></span><button id="undoBtn" type="button">Undo</button></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
