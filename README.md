@@ -27,13 +27,11 @@ Then on the site: **Owner login → First time? Create your password**. After th
 
 Passwords: change your own under **Settings → Change my password**. If one owner forgets theirs, the other owner can set a new one under **Settings → Reset another owner's password** (edge function `reset-owner-password`).
 
-## Sarasavi search
+## Sarasavi and "Your next reads"
 
-Searching the site also shows matching books from [Sarasavi](https://www.sarasavi.lk), each linking to that book's page there for price and stock.
-
-- Titles and links come only from Sarasavi's **public sitemap**, which their robots.txt allows. Their product pages, search, API and accounts are never fetched, so prices and stock are not copied.
-- `sync-sarasavi` (edge function) loads one sitemap part per call into `public.sarasavi_catalog` and refuses to refetch any part more than once every 6 days. A `pg_cron` job (`sync-sarasavi-catalog`) calls it every 15 minutes between 02:00 and 05:59 UTC; when nothing is due it returns without contacting Sarasavi.
-- `search_sarasavi(q)` (SQL function) returns the 8 best title matches.
+- **Search box:** when a search has 3+ letters, a button opens Sarasavi's own live search for it (), with their real prices and stock. Wishlist books have the same button.
+- **Your next reads** (slideshow at the top of the shelf): built by the  edge function from Open Library: unowned books in series she owns, then popular books by her six most-shelved authors, plus her wishlist (owners only). Stored in ; rebuilt daily at 03:00 UTC by the  cron job and after books are added (at most once every 10 minutes). Each slide links to Sarasavi's search for that title and author.
+- We tried matching Sarasavi's public sitemap, but most of its links are outdated and 404, so the site doesn't link to Sarasavi product pages directly.
 
 ## Covers
 

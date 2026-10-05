@@ -32,6 +32,8 @@
     hourglass: '<path d="M5 22h14M5 2h14M17 22v-4.2a2 2 0 0 0-.6-1.4L12 12l-4.4 4.4a2 2 0 0 0-.6 1.4V22M7 2v4.2a2 2 0 0 0 .6 1.4L12 12l4.4-4.4a2 2 0 0 0 .6-1.4V2"/>',
     image: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>',
     camera: '<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3"/>',
+    left: '<path d="m15 18-6-6 6-6"/>',
+    right: '<path d="m9 18 6-6-6-6"/>',
     sort: '<path d="m3 16 4 4 4-4M7 20V4M21 8l-4-4-4 4M17 4v16"/>',
     key: '<path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4M21 2l-9.6 9.6"/><circle cx="7.5" cy="15.5" r="5.5"/>',
     sparkle: '<path d="M12 2l2.2 6.8L21 11l-6.8 2.2L12 20l-2.2-6.8L3 11l6.8-2.2z" fill="currentColor" stroke="none"/>',
@@ -106,15 +108,17 @@
 
   // ---------- data ----------
   async function load() {
-    const [b, s, st] = await Promise.all([
+    const [b, s, st, nr] = await Promise.all([
       sb.from('books').select('*').order('created_at', { ascending: false }),
       sb.from('sales').select('*').order('created_at', { ascending: false }),
       sb.from('settings').select('*').eq('id', 1).maybeSingle(),
+      sb.from('next_reads').select('*').order('rank').order('id'),
     ]);
     if (b.error) { toast("Couldn't load the library. Check your connection and refresh."); return; }
     // Shelf order: series together in reading order, standalones by title
     S.books = b.data.sort((x, y) => (x.series || x.title).localeCompare(y.series || y.title) || (x.series_no || 0) - (y.series_no || 0));
     S.sales = s.data || []; if (st.data) S.settings = st.data;
+    S.next = nr.data || [];
     if (S.admin) {
       const [l, w, f] = await Promise.all([
         sb.from('lending').select('*'),
@@ -218,12 +222,30 @@
     const chips = [['all', 'All'], ['reading', 'Reading'], ['read', 'Read'], ['unread', 'Unread'], ['lent', 'Lent out']]
       .map(([k, l]) => `<button class="chip" data-a="filter" data-f="${k}" aria-pressed="${S.filter === k}">${l}</button>`).join('');
     if (!S.books.length) return `<h2>${hic('shelf')}Shelf</h2>${empty('The shelf is empty', S.admin ? 'Scan a barcode or add your first book.' : 'No books yet. Check back soon.', S.admin ? `<button class="primary" data-a="add">${ic('plus')}Add a book</button>` : '')}`;
-    return `<h2>${hic('shelf')}Shelf <span>${S.books.length} book${S.books.length === 1 ? '' : 's'}</span></h2>
+    return `${heroNext()}<h2>${hic('shelf')}Shelf <span>${S.books.length} book${S.books.length === 1 ? '' : 's'}</span></h2>
       <div class="shelf-tools"><div class="filters" role="group" aria-label="Filter books">${chips}</div>
         <label class="sortbox"><span class="sr">Sort books by</span>${ic('sort')}<select id="sortSel">${[['series', 'Series'], ['author', 'Author'], ['title', 'Title A–Z'], ['recent', 'Recently added']].map(([k, l]) => `<option value="${k}" ${S.sort === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label></div>
       ${list.length ? `<div class="shelf">${list.map((b, i) => `<button class="book" style="--i:${i}" data-a="open" data-id="${b.id}" title="${esc(b.title)}" aria-label="${esc(b.title)}${b.is_lent ? ', lent out' : ''}">${b.is_lent ? `<span class="badge lent">${ic('out')}</span>` : b.status === 'read' ? `<span class="badge read">${ic('check')}</span>` : b.status === 'reading' ? `<span class="badge reading">${ic('book')}</span>` : ''}${cover(b)}</button>`).join('')}${S.filter === 'all' ? `<div class="decor" aria-hidden="true">${PLANT}</div>` : ''}</div>
       <div class="legend"><span><i style="background:var(--ok)"></i>Read</span><span><i style="background:var(--accent)"></i>Reading</span><span><i style="background:var(--warn)"></i>Lent out</span></div>`
         : empty('Nothing here', 'No books match this filter.')}`;
+  }
+
+  function heroNext() {
+    if (!S.next?.length) return '';
+    return `<section class="hero" aria-roledescription="carousel" aria-label="Your next reads">
+      <div class="hero-head"><h2>${hic('sparkle')}Your next reads <span>Picked from ${S.admin ? 'your' : `${esc(name())}'s`} shelf</span></h2>
+        <div class="hero-nav"><button class="round" data-a="hero" data-d="-1" aria-label="Previous">${ic('left')}</button><button class="round" data-a="hero" data-d="1" aria-label="Next">${ic('right')}</button></div></div>
+      <div class="hero-track" id="heroTrack" tabindex="0">${S.next.map((p, i) => `
+        <article class="slide" aria-roledescription="slide" aria-label="${i + 1} of ${S.next.length}">
+          ${cover({ title: p.title, author: p.author, cover_url: p.cover_url }, 'hero-cov')}
+          <div class="slide-body">
+            <span class="pill ${p.private ? 'ok' : 'lav'}">${p.private ? ic('wish') : ic('sparkle')}${esc(p.reason)}</span>
+            <h3>${esc(p.title)}</h3><p>${esc(p.author || '')}</p>
+            <div class="slide-actions"><a class="primary" href="${esc(sarasaviUrl(`${p.title} ${p.author || ''}`))}" target="_blank" rel="noopener">${ic('bag')}Find at Sarasavi</a>
+            ${S.admin && !p.private ? `<button class="ghost" data-a="next-wish" data-i="${i}">${ic('wish')}Wishlist</button>` : ''}</div>
+          </div>
+        </article>`).join('')}</div>
+    </section>`;
   }
 
   function viewSeries() {
@@ -275,7 +297,7 @@
     return `<h2>${hic('wish')}Wishlist <span>only you can see this</span></h2>${tools}<div class="cards">${S.wish.map((w, i) => `<article class="item" style="--i:${i}">${cover(w, 'md')}<div class="grow">
       <span class="t">${esc(w.title)}</span><span class="a">${esc(seriesLine(w))}</span>
       ${fillsGap(w) ? '<span class="pill lav">Fills a gap in your series</span>' : ''}
-      <div class="actions"><button class="ghost" data-a="got" data-id="${w.id}">${ic('check')}Got it</button><button class="ghost" data-a="sv-find" data-q="${esc(w.title)}">${ic('bag')}Sarasavi</button><button class="ghost" data-a="wish-del" data-id="${w.id}">Remove</button></div>
+      <div class="actions"><button class="ghost" data-a="got" data-id="${w.id}">${ic('check')}Got it</button><a class="ghost" href="${esc(sarasaviUrl(w.title))}" target="_blank" rel="noopener">${ic('bag')}Sarasavi</a><button class="ghost" data-a="wish-del" data-id="${w.id}">Remove</button></div>
     </div></article>`).join('')}</div>`;
   }
   const fillsGap = (w) => w.series && S.books.some((b) => b.series === w.series) && !S.books.some((b) => b.series === w.series && b.series_no === w.series_no);
@@ -302,36 +324,12 @@
     box.innerHTML = h;
   }
 
-  // ---------- Sarasavi (titles + links from their public sitemap; prices stay on their site) ----------
-  let svTimer = null, svSeq = 0;
+  // ---------- Sarasavi: link to their live search (their sitemap is outdated, so no direct product links) ----------
+  const sarasaviUrl = (q) => `https://www.sarasavi.lk/serach-result?keyword=${encodeURIComponent(q.trim())}`;
   function searchSarasavi() {
-    clearTimeout(svTimer);
     const q = S.q.trim(), box = $('#sv');
-    if (norm(q).length < 3) { box.innerHTML = ''; return; }
-    svTimer = setTimeout(async () => {
-      const seq = ++svSeq;
-      const { data, error } = await sb.rpc('search_sarasavi', { q });
-      if (seq !== svSeq || S.q.trim() !== q) return;
-      const rows = (data || []).filter((r) => /^[\w\-().%']+$/.test(r.slug)).slice(0, 5);
-      if (error || !rows.length) {
-        box.innerHTML = error ? '' : `<p class="sv-head">${ic('bag')}At Sarasavi<span>No match in their catalogue</span></p>`;
-        return;
-      }
-      box.innerHTML = `<p class="sv-head">${ic('bag')}At Sarasavi<span>Tap for price and stock</span></p>` + rows.map((r, i) => `
-        <a class="verdict sv-item" style="animation-delay:${i * 40}ms" href="https://www.sarasavi.lk/product/${esc(r.slug)}" target="_blank" rel="noopener">
-          <span class="sv-cov" data-t="${esc(r.title)}">${cover({ title: r.title, author: '', cover_url: null }, 'sm')}</span>
-          <span class="grow"><span class="t">${esc(r.title)}</span><small>Open at Sarasavi</small></span>${ic('out')}</a>`).join('');
-      // Fill in covers from Open Library (best effort, first few only)
-      box.querySelectorAll('.sv-cov').forEach(async (el, i) => {
-        if (i > 3) return;
-        const t = el.dataset.t.split(' – ').pop();
-        try {
-          const j = await (await fetch(`https://openlibrary.org/search.json?title=${encodeURIComponent(t)}&fields=cover_i&limit=1`)).json();
-          const id = j.docs?.[0]?.cover_i;
-          if (id && el.isConnected) el.innerHTML = cover({ title: t, author: '', cover_url: olCover(id) }, 'sm');
-        } catch { /* keep the plain spine */ }
-      });
-    }, 350);
+    box.innerHTML = norm(q).length < 3 ? '' :
+      `<a class="verdict sv-item" href="${esc(sarasaviUrl(q))}" target="_blank" rel="noopener"><span class="bag">${ic('bag')}</span><span class="grow"><span class="t">Search Sarasavi for "${esc(q)}"</span><small>Opens their shop with live prices and stock</small></span>${ic('out')}</a>`;
   }
 
   // ---------- sheet ----------
@@ -380,6 +378,23 @@
       y0 = null;
     });
   })();
+
+  // Hero slideshow
+  let heroPaused = false, heroLastUser = 0;
+  function heroStep(d, byUser) {
+    const tr = $('#heroTrack'); if (!tr) return;
+    if (byUser) heroLastUser = Date.now();
+    const slide = tr.querySelector('.slide'); if (!slide) return;
+    const w = slide.getBoundingClientRect().width + parseFloat(getComputedStyle(tr).columnGap || 16);
+    const atEnd = tr.scrollLeft + tr.clientWidth >= tr.scrollWidth - 4;
+    tr.scrollTo({ left: d > 0 && atEnd ? 0 : d < 0 && tr.scrollLeft < 4 ? tr.scrollWidth : tr.scrollLeft + d * w, behavior: 'smooth' });
+  }
+  ['mouseover', 'focusin', 'touchstart'].forEach((ev) => document.addEventListener(ev, (e) => { if (e.target.closest?.('.hero')) heroPaused = true; }, { passive: true }));
+  ['mouseout', 'focusout'].forEach((ev) => document.addEventListener(ev, (e) => { if (e.target.closest?.('.hero') && !e.relatedTarget?.closest?.('.hero')) heroPaused = false; }));
+  document.addEventListener('touchend', (e) => { if (e.target.closest?.('.hero')) setTimeout(() => { heroPaused = false; }, 4000); }, { passive: true });
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    setInterval(() => { if (!heroPaused && !document.hidden && !document.body.classList.contains('open') && Date.now() - heroLastUser > 8000) heroStep(1); }, 5000);
+  }
 
   // Keep keyboard focus inside an open sheet
   document.addEventListener('keydown', (e) => {
@@ -535,6 +550,7 @@
   function cacheCovers() {
     if (!S.admin) return;
     sb.functions.invoke('cache-covers').then(({ data }) => { if (data?.cached) load(); }).catch(() => {});
+    sb.functions.invoke('build-next-reads').then(({ data }) => { if (data?.built) load(); }).catch(() => {});
   }
 
   // ---------- cover picker ----------
@@ -769,7 +785,15 @@
       toast(`Deleted ${b.title}`, () => sb.from('books').insert({ ...b, is_lent: false }));
     },
     cover: (t) => openCoverSheet(t.dataset.id),
-    'sv-find': (t) => { const q = $('#q'); q.value = t.dataset.q; S.q = q.value; renderResults(); searchSarasavi(); window.scrollTo({ top: 0, behavior: 'smooth' }); q.focus({ preventScroll: true }); },
+    hero: (t) => heroStep(+t.dataset.d, true),
+    'next-wish': async (t) => {
+      const p = S.next[+t.dataset.i]; if (!p) return;
+      t.disabled = true;
+      if (!(await save(sb.from('wishlist').insert({ title: p.title, author: p.author, cover_url: p.cover_url })))) { t.disabled = false; return; }
+      log(`Added ${p.title} to the wishlist`, p.cover_url);
+      cacheCovers(); toast(`Added ${p.title} to your wishlist`);
+      await load();
+    },
     forgot: () => sheet(`<div class="sheet-head"><h3 id="sheetTitle">Forgot your password?</h3>${closeBtn}</div>
       <p>Ask the other owner of this library to reset it:</p>
       <ol class="steps"><li>They log in and tap the round initial at the top.</li><li>They open <b>Reset another owner's password</b>, enter your email and a new password, and send it to you.</li><li>You log in with it, then change it under <b>Change my password</b>.</li></ol>
