@@ -29,8 +29,8 @@ Passwords: change your own under **Settings → Change my password**. If one own
 
 ## Sarasavi and "Your next reads"
 
-- **Search box:** when a search has 3+ letters, a button opens Sarasavi's own live search for it (), with their real prices and stock. Wishlist books have the same button.
-- **Your next reads** (slideshow at the top of the shelf): built by the  edge function from Open Library: unowned books in series she owns, then popular books by her six most-shelved authors, plus her wishlist (owners only). Stored in ; rebuilt daily at 03:00 UTC by the  cron job and after books are added (at most once every 10 minutes). Each slide links to Sarasavi's search for that title and author.
+- **Search box:** when a search has 3+ letters, a button opens Sarasavi's own live search for it (`/serach-result?keyword=…`), with their real prices and stock. Wishlist books have the same button.
+- **Your next reads** (slideshow at the top of the shelf): built by the `build-next-reads` edge function from Open Library: unowned books in series she owns, then popular books by her six most-shelved authors, plus her wishlist (owners only). Stored in `public.next_reads`; rebuilt daily at 03:00 UTC by the `build-next-reads-daily` cron job and after books are added (at most once every 10 minutes). Each slide links to Sarasavi's search for that title and author.
 - We tried matching Sarasavi's public sitemap, but most of its links are outdated and 404, so the site doesn't link to Sarasavi product pages directly.
 
 ## Covers
