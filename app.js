@@ -198,7 +198,7 @@
         ${mentalist ? '<span class="note-tag">CBI case note</span>' : '<span class="note-tag">a little note</span>'}
         <p class="note-msg">${esc(note)}</p>
         <p class="note-sign">– tea tea towel</p>
-        <button class="primary note-ok">aww ok</button>
+        <button class="primary note-ok">aww rat</button>
       </div>`;
     document.body.appendChild(el);
     const close = () => { el.classList.remove('show'); setTimeout(() => el.remove(), 350); document.removeEventListener('keydown', onKey); };
