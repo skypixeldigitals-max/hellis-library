@@ -155,6 +155,46 @@
     S.admin = false;
     if (S.user) { const { data } = await sb.rpc('is_admin'); S.admin = data === true; }
     await load();
+    maybeShowNote();
+  }
+
+  // ---------- little notes from tea tea towel (only for Helli) ----------
+  // Her email is compared by SHA-256 so the address itself isn't in the public code.
+  const HELLI = '8bfd8e9de1a44be60269f08fcdb88a907ec3ac24b1db65aa0fdc51795c52e432';
+  const NOTES = [
+    'another book? really?', 'you own this already. probably', '50 books and counting. wow',
+    'reading again? shocker', 'hi nerd', 'one more chapter, sure', 'put the book down. kidding',
+    "jace isn't real btw", "shelf's full. buy another shelf", 'tipi tipi break?', "you'd pick books over me",
+    ['late', 'still reading? go to sleep'], ['morning', 'morning nerd'], 'red roses, or books? books, obviously',
+    "jane would've guessed this book", 'you read like lisbon works', "red john didn't take your books",
+    'tea? ask jane. or me', 'cho says: read faster', "i'm the mentalist now", "predicting you'll buy another book",
+    "jane's couch, your bed. same thing", 'rigsby ate your tipi tipi', 'suspect: you. crime: too many books',
+    'smiley face on your shelf? 👀', 'lisbon would confiscate this many books',
+  ];
+  let noteShown = false;
+  async function maybeShowNote() {
+    if (noteShown || !S.user?.email || !crypto.subtle) return;
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(S.user.email.trim().toLowerCase()));
+    if ([...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('') !== HELLI) return;
+    noteShown = true;
+    const h = new Date().getHours();
+    const slot = h >= 5 && h < 12 ? 'morning' : h >= 22 || h < 5 ? 'late' : '';
+    const pool = NOTES.filter((n) => typeof n === 'string' || n[0] === slot).map((n) => (typeof n === 'string' ? n : n[1]));
+    let last = ''; try { last = localStorage.getItem('lastNote') || ''; } catch { /* private mode */ }
+    const options = pool.filter((n) => n !== last);
+    const note = options[Math.floor(Math.random() * options.length)];
+    try { localStorage.setItem('lastNote', note); } catch { /* private mode */ }
+    const el = document.createElement('div');
+    el.className = 'note-pop';
+    el.setAttribute('role', 'status');
+    el.innerHTML = `<span class="note-cup" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M17 8h1a4 4 0 1 1 0 8h-1M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4ZM6 2v2M10 2v2M14 2v2"/></svg></span>
+      <span class="note-text"><span class="note-msg">${esc(note)}</span><span class="note-sign">– tea tea towel</span></span>
+      <button class="note-x" aria-label="Close">${ic('x')}</button>`;
+    document.body.appendChild(el);
+    const close = () => { el.classList.remove('show'); setTimeout(() => el.remove(), 300); };
+    el.addEventListener('click', close);
+    setTimeout(() => el.classList.add('show'), 500);
+    setTimeout(close, 9000);
   }
   document.body.classList.add('is-loading');
   sb.auth.onAuthStateChange((_event, session) => { setTimeout(() => refreshAuth(session), 0); });
