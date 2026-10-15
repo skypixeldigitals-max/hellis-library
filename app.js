@@ -158,7 +158,7 @@
     maybeShowNote();
   }
 
-  // ---------- little notes from tea tea towel (only for Helli) ----------
+  // ---------- little notes from tea towel (only for Helli) ----------
   // Her email is compared by SHA-256 so the address itself isn't in the public code.
   const HELLI = '8bfd8e9de1a44be60269f08fcdb88a907ec3ac24b1db65aa0fdc51795c52e432';
   // Mentalist notes come up about 3 times out of 4. [slot, text] pairs only show at that time of day.
@@ -192,12 +192,12 @@
     const el = document.createElement('div');
     el.className = `note-pop${mentalist ? ' mentalist' : ''}`;
     el.setAttribute('role', 'dialog');
-    el.setAttribute('aria-label', 'A note from tea tea towel');
+    el.setAttribute('aria-label', 'A note from tea towel');
     el.innerHTML = `<div class="note-card">
         <span class="note-cup" aria-hidden="true"><span class="steam"><i></i><i></i><i></i></span><svg viewBox="0 0 24 24"><path d="M17 8h1a4 4 0 1 1 0 8h-1M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/></svg></span>
         ${mentalist ? '<span class="note-tag">CBI case note</span>' : '<span class="note-tag">a little note</span>'}
         <p class="note-msg">${esc(note)}</p>
-        <p class="note-sign">– tea tea towel</p>
+        <p class="note-sign">– tea towel</p>
         <button class="primary note-ok">aww rat</button>
       </div>`;
     document.body.appendChild(el);

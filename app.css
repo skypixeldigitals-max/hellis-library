@@ -442,7 +442,7 @@ h2 > span { margin-left: auto; }
   .cov.hero-cov { width: 80px; }
 }
 
-/* ---------- note from tea tea towel ---------- */
+/* ---------- note from tea towel ---------- */
 .note-pop { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 24px 16px; background: rgba(43, 26, 60, .45); backdrop-filter: blur(3px); opacity: 0; transition: opacity .3s; }
 .note-pop.show { opacity: 1; }
 .note-card { position: relative; width: min(360px, 100%); padding: 30px 24px 22px; text-align: center; background: var(--card); border: 2px solid var(--lav-line); border-radius: 26px; box-shadow: 0 30px 60px -20px rgba(43, 26, 60, .6); transform: translateY(24px) scale(.9) rotate(-2deg); transition: transform .5s cubic-bezier(.2, 1.4, .4, 1); }
