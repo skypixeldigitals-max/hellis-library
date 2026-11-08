@@ -120,14 +120,15 @@
     S.sales = s.data || []; if (st.data) S.settings = st.data;
     S.next = nr.data || [];
     if (S.admin) {
-      const [l, w, f] = await Promise.all([
+      const [l, w, f, wj] = await Promise.all([
         sb.from('lending').select('*'),
         sb.from('wishlist').select('*').order('created_at', { ascending: false }),
         sb.from('activity').select('*').order('created_at', { ascending: false }).limit(40),
+        sb.from('wishes').select('*').order('created_at'),
       ]);
       S.lending = Object.fromEntries((l.data || []).map((x) => [x.book_id, x]));
-      S.wish = w.data || []; S.feed = f.data || [];
-    } else { S.lending = {}; S.wish = []; S.feed = []; }
+      S.wish = w.data || []; S.feed = f.data || []; S.wishes = wj.data || [];
+    } else { S.lending = {}; S.wish = []; S.feed = []; S.wishes = []; }
     S.loaded = true;
     document.body.classList.remove('is-loading');
     renderAll();
@@ -216,7 +217,7 @@
   }
 
   // ---------- render ----------
-  function renderAll() { renderHeader(); renderSide(); renderNav(); renderView(); renderResults(); renderQuote(); renderFoot(); }
+  function renderAll() { renderHeader(); renderSide(); renderJar(); renderNav(); renderView(); renderResults(); renderQuote(); renderFoot(); }
   function renderQuote() {
     const [q, who] = QUOTES[Math.floor(Date.now() / 864e5) % QUOTES.length];
     $('#quote').innerHTML = `${ic('feather')}<blockquote>${esc(q)}</blockquote><figcaption>${esc(who)}</figcaption>`;
@@ -297,6 +298,50 @@
           </div>
         </article>`).join('')}</div>
     </section>`;
+  }
+
+  // ---------- wish jar (owners only) ----------
+  const STAR_COLORS = ['#f6c453', '#f4a3c0', '#a58bd0', '#8fd3c7', '#f7b38a', '#c9b3f0'];
+  // Paper stars stack from the bottom of the jar; positions are stable for each wish
+  function jarSvg(wishes, newId) {
+    const stars = wishes.map((w, i) => {
+      const row = Math.floor(i / 4), col = i % 4;
+      const seed = [...w.id].reduce((a, c) => a + c.charCodeAt(0), 0);
+      const x = 34 + col * 20 + (row % 2 ? 9 : 0) + (seed % 5) - 2;
+      const y = 122 - row * 14 - (seed % 3);
+      if (y < 52) return '';
+      const rot = (seed * 37) % 360;
+      return `<g class="${w.id === newId ? 'star-new' : ''}" transform="translate(${x} ${y}) rotate(${rot}) scale(1.5)"><path d="M0-6 1.8-1.9 6-1.9 2.6 0.8 3.8 5 0 2.5-3.8 5-2.6 0.8-6-1.9-1.8-1.9z" fill="${STAR_COLORS[seed % STAR_COLORS.length]}" stroke="rgba(0,0,0,.12)" stroke-width=".6"/></g>`;
+    }).join('');
+    return `<svg class="jar-svg" viewBox="0 0 130 140" aria-hidden="true">
+      <defs><clipPath id="jarIn"><path d="M27 44h76c6 0 10 5 10 11v62c0 9-7 16-16 16H33c-9 0-16-7-16-16V55c0-6 4-11 10-11z"/></clipPath></defs>
+      <rect x="38" y="20" width="54" height="14" rx="4" fill="#b98b5e"/><rect x="38" y="20" width="54" height="5" rx="3" fill="#cfa274"/>
+      <path d="M42 34h46v10H42z" fill="#e9dcf3" opacity=".9"/>
+      <g clip-path="url(#jarIn)">${stars}</g>
+      <path d="M27 44h76c6 0 10 5 10 11v62c0 9-7 16-16 16H33c-9 0-16-7-16-16V55c0-6 4-11 10-11z" fill="rgba(217,198,242,.18)" stroke="#a58bd0" stroke-width="2.5"/>
+      <path d="M26 60c0-5 2-8 5-9" stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none" opacity=".8"/>
+      <path d="M58 30c3-4 9-4 12 0" stroke="#7356a0" stroke-width="1.6" fill="none"/>
+    </svg>`;
+  }
+  function renderJar() {
+    const el = $('#jar'); if (!el) return;
+    if (!S.admin) { el.innerHTML = ''; return; }
+    const w = S.wishes || [];
+    el.innerHTML = `<button class="jar-card" data-a="jar">${jarSvg(w.slice(-15))}<span class="jar-text"><span class="k">Wish jar</span><b>${w.length ? `${w.length} wish${w.length === 1 ? '' : 'es'} inside` : 'Make a wish'}</b><small>${w.filter((x) => x.granted).length ? `${w.filter((x) => x.granted).length} granted ✨` : 'Only you two can see it'}</small></span></button>`;
+  }
+  function openJar(newId) {
+    const w = S.wishes || [];
+    sheet(`<div class="sheet-head"><h3 id="sheetTitle">Wish jar</h3>${closeBtn}</div>
+      <div class="jar-big">${jarSvg(w, newId)}</div>
+      <form id="wishForm" class="wish-form"><label for="wishIn" class="sr">Your wish</label>
+        <textarea id="wishIn" maxlength="280" rows="2" placeholder="I wish…" required></textarea>
+        <button class="primary" type="submit">${ic('sparkle')}Drop it in</button></form>
+      <p class="muted wish-hint">Only you two can see these.</p>
+      <div class="wish-list">${w.length ? [...w].reverse().map((x, i) => `<div class="wish${x.granted ? ' granted' : ''}" style="--i:${i}">
+          <span class="wish-star" style="color:${STAR_COLORS[[...x.id].reduce((a, c) => a + c.charCodeAt(0), 0) % STAR_COLORS.length]}">${ic('star')}</span>
+          <div class="grow"><p>${esc(x.text)}</p><small>${shortDate(x.created_at)}${x.granted ? ' · granted ✨' : ''}</small></div>
+          <div class="wish-acts"><button class="ghost" data-a="wish-grant" data-id="${x.id}">${x.granted ? 'Undo' : 'Granted'}</button><button class="ghost danger" data-a="wish-x" data-id="${x.id}" aria-label="Remove wish">${ic('x')}</button></div>
+        </div>`).join('') : '<p class="muted" style="text-align:center;padding:12px 0">The jar is empty. Make the first wish ✨</p>'}</div>`);
   }
 
   function viewSeries() {
@@ -836,6 +881,19 @@
       toast(`Deleted ${b.title}`, () => sb.from('books').insert({ ...b, is_lent: false }));
     },
     cover: (t) => openCoverSheet(t.dataset.id),
+    jar: () => openJar(),
+    'wish-grant': async (t) => {
+      const x = S.wishes.find((w) => w.id === t.dataset.id); if (!x) return;
+      x.granted = !x.granted; openJar(); renderJar();
+      if (!(await save(sb.from('wishes').update({ granted: x.granted }).eq('id', x.id)))) return;
+      if (x.granted) toast('Wish granted ✨');
+    },
+    'wish-x': async (t) => {
+      if (!t.classList.contains('armed')) { t.classList.add('armed'); t.innerHTML = 'Remove?'; return; }
+      const x = { ...S.wishes.find((w) => w.id === t.dataset.id) };
+      if (!(await save(sb.from('wishes').delete().eq('id', x.id)))) return;
+      await load(); openJar(); toast('Wish removed', async () => { await sb.from('wishes').insert(x); });
+    },
     hero: (t) => heroStep(+t.dataset.d, true),
     'next-wish': async (t) => {
       const p = S.next[+t.dataset.i]; if (!p) return;
@@ -959,6 +1017,14 @@
       const { error } = await sb.auth.signInWithPassword({ email, password });
       if (error) return fail(/invalid/i.test(error.message) ? "That email and password don't match. Check for typos and try again." : `Couldn't log in: ${error.message}`);
       closeSheet(); toast(`Welcome, ${name()}!`);
+    }
+    if (e.target.id === 'wishForm') {
+      const text = $('#wishIn').value.trim(); if (!text) return;
+      const btn = e.target.querySelector('button'); btn.disabled = true;
+      const { data, error } = await sb.from('wishes').insert({ text }).select().single();
+      if (error) { btn.disabled = false; toast(`Couldn't add the wish: ${error.message}`); return; }
+      S.wishes.push(data); renderJar(); openJar(data.id); toast('Wish dropped in the jar ✨');
+      return;
     }
     if (e.target.id === 'pwForm') {
       const p1 = $('#npw').value, p2 = $('#npw2').value, err = $('#pwErr');

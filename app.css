@@ -461,3 +461,30 @@ h2 > span { margin-left: auto; }
 .note-msg { margin: 14px 0 6px; font-family: var(--display); font-weight: 700; font-size: 30px; line-height: 1.1; color: var(--title); text-wrap: balance; }
 .note-sign { font-family: var(--note); font-size: 28px; color: var(--accent); line-height: 1; }
 .note-ok { margin-top: 18px; min-width: 140px; }
+
+/* ---------- wish jar ---------- */
+#jar:empty { display: none; }
+.jar-card { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 10px 14px; border-radius: var(--r); background: linear-gradient(135deg, var(--lav-soft), var(--card)); border: 1px solid var(--lav-line); transition: transform .15s; }
+.jar-card:hover { border-color: var(--accent); }
+.jar-card:active { transform: scale(.98); }
+.jar-card .jar-svg { width: 56px; height: auto; flex: none; }
+.jar-text { display: grid; gap: 1px; }
+.jar-text .k { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+.jar-text b { font-family: var(--display); font-size: 20px; color: var(--title); line-height: 1.1; }
+.jar-text small { font-size: 14px; color: var(--muted); }
+.jar-big { display: grid; place-items: center; margin: -4px 0 8px; }
+.jar-big .jar-svg { width: 170px; height: auto; }
+.star-new { animation: star-drop .9s cubic-bezier(.3, 1.4, .5, 1) both; }
+@keyframes star-drop { from { transform: translate(65px, -10px) rotate(0) scale(1.5); opacity: 0; } }
+.wish-form { display: flex; gap: 8px; align-items: flex-end; }
+.wish-form textarea { flex: 1; min-width: 0; min-height: 52px; resize: vertical; border: 1.5px solid var(--line-strong); border-radius: 10px; padding: 10px 12px; background: var(--bg); font-size: 17px; }
+.wish-form textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--ring); }
+.wish-hint { font-size: 14px; margin: 6px 0 12px; }
+.wish-list { display: grid; gap: 8px; }
+.wish { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; animation: rise .3s var(--ease) both; animation-delay: calc(min(var(--i), 10) * 35ms); }
+.wish p { font-size: 17px; line-height: 1.35; color: var(--title); overflow-wrap: anywhere; }
+.wish small { color: var(--muted); font-size: 13px; }
+.wish.granted { background: linear-gradient(135deg, #fff6d8, var(--card)); border-color: #f1d98a; }
+.wish-star svg.i { width: 22px; height: 22px; fill: currentColor; stroke: rgba(0, 0, 0, .15); }
+.wish-acts { display: flex; gap: 4px; flex: none; }
+.wish-acts .ghost { min-height: 36px; padding: 0 10px; font-size: 14px; }
