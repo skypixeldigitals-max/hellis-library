@@ -211,6 +211,7 @@
     const el = $('#bday'); if (!el) return;
     clearInterval(bdayTimer);
     if (!(await isHelli())) { el.innerHTML = ''; return; }
+    startRat();
     const st = bdayState();
     const balloons = BALLOONS.map(balloon).join('');
     if (st.today) {
@@ -251,6 +252,48 @@
       host.appendChild(p);
       setTimeout(() => p.remove(), 1400);
     }
+  }
+
+  // ---------- little rat that follows the cursor (only Helli) ----------
+  // Mouse: trots after the pointer. Touch: scurries to wherever she taps. Never blocks clicks.
+  let ratStarted = false;
+  function startRat() {
+    if (ratStarted) return; ratStarted = true;
+    const rat = document.createElement('div');
+    rat.className = 'rat';
+    rat.setAttribute('aria-hidden', 'true');
+    rat.innerHTML = `<span class="rat-say">squeak!</span><svg viewBox="0 0 64 44">
+      <path class="rat-tail" d="M12 30c-6 0-10-4-9-9 1-4 5-5 7-3" fill="none" stroke="#f0a7b9" stroke-width="2.6" stroke-linecap="round"/>
+      <ellipse cx="28" cy="29" rx="17" ry="11" fill="#b9b1c9"/>
+      <ellipse cx="30" cy="32" rx="11" ry="6.5" fill="#e6e0ee"/>
+      <g class="rat-feet" fill="#f0a7b9"><ellipse cx="20" cy="39.5" rx="3.4" ry="2"/><ellipse cx="36" cy="39.5" rx="3.4" ry="2"/></g>
+      <circle cx="45" cy="23" r="10" fill="#c3bbd2"/>
+      <circle cx="41" cy="12" r="6.5" fill="#c3bbd2"/><circle cx="41" cy="12" r="4" fill="#f4c2cf"/>
+      <path d="M53 23c4 0 7 2 8 4-2 1-5 2-8 1z" fill="#c3bbd2"/>
+      <circle cx="61" cy="27" r="2" fill="#f08aa6"/>
+      <circle class="rat-eye" cx="48" cy="21" r="1.9" fill="#2b1a2a"/><circle cx="48.6" cy="20.4" r=".6" fill="#fff"/>
+      <ellipse cx="47" cy="27" rx="2.2" ry="1.3" fill="#f4a3c0" opacity=".6"/>
+      <g stroke="#8b829c" stroke-width=".7" stroke-linecap="round"><path d="M58 27l5-2M58 28h5.5M58 29l5 2"/></g>
+    </svg>`;
+    document.body.appendChild(rat);
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let x = innerWidth - 80, y = innerHeight - 140, tx = x, ty = y, face = -1, lastMove = Date.now(), lastSay = 0;
+    const OFFSET = 14;
+    addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') { tx = e.clientX + OFFSET; ty = e.clientY + OFFSET; lastMove = Date.now(); } }, { passive: true });
+    addEventListener('pointerdown', (e) => { if (e.pointerType !== 'mouse') { tx = e.clientX - 32; ty = e.clientY + 8; lastMove = Date.now(); } }, { passive: true });
+    addEventListener('resize', () => { tx = Math.min(tx, innerWidth - 60); ty = Math.min(ty, innerHeight - 50); });
+    (function step() {
+      const dx = tx - x, dy = ty - y, dist = Math.hypot(dx, dy);
+      if (reduce) { x = tx; y = ty; } else { x += dx * 0.12; y += dy * 0.12; }
+      if (Math.abs(dx) > 2) face = dx > 0 ? 1 : -1;
+      x = Math.max(0, Math.min(x, innerWidth - 56)); y = Math.max(0, Math.min(y, innerHeight - 42));
+      rat.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+      rat.classList.toggle('run', dist > 3 && !reduce);
+      rat.classList.toggle('flip', face < 0);
+      const idle = Date.now() - lastMove;
+      if (idle > 6000 && Date.now() - lastSay > 25000) { lastSay = Date.now(); rat.classList.add('say'); setTimeout(() => rat.classList.remove('say'), 1600); }
+      requestAnimationFrame(step);
+    })();
   }
 
   let noteShown = false;
