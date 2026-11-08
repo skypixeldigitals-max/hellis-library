@@ -560,3 +560,37 @@ button.bday-rat { padding: 0; cursor: pointer; touch-action: manipulation; }
 .rat-heart { position: absolute; bottom: 60%; color: #f4a3c0; font-size: 18px; pointer-events: none; text-shadow: 0 1px 2px rgba(0, 0, 0, .2); animation: heart-up 1.4s ease-out var(--d) both; }
 @keyframes heart-up { from { transform: translate(0, 0) scale(.6); opacity: 0; } 15% { opacity: 1; } to { transform: translate(var(--dx), -70px) scale(1.2); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .bday-rat .rat-say { animation: none; } .bday-rat.petted svg { animation: none; } }
+
+/* ---------- rat wandering along the banner floor ---------- */
+.bday { padding-bottom: 96px; }
+.rat-stage { position: absolute; left: 18px; right: 18px; bottom: 8px; height: 80px; z-index: 3; pointer-events: none; }
+.rat-stage::after { content: ''; position: absolute; left: 0; right: 0; bottom: 1px; height: 2px; border-radius: 2px; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .22), transparent); }
+.bday-rat { position: absolute; left: 0; bottom: 0; width: 107px; height: 80px; margin: 0; pointer-events: auto; will-change: transform; }
+.bday-rat .rp { display: none; position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 4px 3px rgba(0, 0, 0, .25)); }
+.pose-sit .rp-sit, .pose-walk .rp-walk, .pose-lookup .rp-lookup, .pose-rest .rp-rest { display: block; }
+.face-left .rp-walk, .face-left .rp-lookup, .face-left .rp-rest { transform: scaleX(-1); }
+.bday-rat .rat-say { display: none; }
+.bday-rat.pose-sit .rat-say { display: block; }
+.leg-a { animation: step .32s ease-in-out infinite alternate; }
+.leg-b { animation: step .32s ease-in-out infinite alternate-reverse; }
+@keyframes step { from { transform: translateX(-4px); } to { transform: translateX(4px); } }
+.pose-walk .walk-body { animation: walk-bob .32s ease-in-out infinite alternate; }
+@keyframes walk-bob { to { transform: translateY(-1.5px); } }
+.sniff { transform-box: fill-box; transform-origin: 0% 100%; animation: sniff 1.4s ease-in-out infinite; }
+@keyframes sniff { 50% { transform: rotate(-4deg); } }
+.nose { transform-box: fill-box; transform-origin: center; animation: twitch .5s ease-in-out infinite; }
+@keyframes twitch { 50% { transform: scale(1.25); } }
+.rest-body { transform-box: fill-box; transform-origin: center bottom; animation: breathe 2.6s ease-in-out infinite; }
+@keyframes breathe { 50% { transform: scaleY(1.04); } }
+.rp .rat-tail { transform-box: view-box; }
+.rp-sit .rat-tail { transform-origin: 74px 84px; }
+.rp-walk .rat-tail { transform-origin: 26px 66px; }
+.rp-lookup .rat-tail { transform-origin: 36px 84px; }
+.rp-rest .rat-tail { transform-origin: 30px 80px; }
+@media (max-width: 520px) {
+  .bday { padding-bottom: 78px; }
+  .rat-stage { height: 64px; left: 10px; right: 10px; }
+  .bday-rat { width: 85px; height: 64px; }
+  .bday-title { padding-right: 70px; }
+}
+@media (prefers-reduced-motion: reduce) { .leg-a, .leg-b, .walk-body, .sniff, .nose, .rest-body { animation: none !important; } }

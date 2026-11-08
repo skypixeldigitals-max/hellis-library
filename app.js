@@ -212,13 +212,15 @@
     clearInterval(bdayTimer);
     if (!(await isHelli())) { el.innerHTML = ''; return; }
     startRatLook();
+    startRatWalk();
     const st = bdayState();
     const balloons = BALLOONS.map(balloon).join('');
     if (st.today) {
       el.innerHTML = `<div class="bday party"><div class="balloons">${balloons}</div>
         <div class="bday-body"><p class="bday-kicker">4 January</p><h2 class="bday-title">Happy birthday, Helli!</h2>
         <p class="bday-sub">today is all about you. tap the cake 🎂</p></div>
-        <div class="bday-pals"><button class="bday-rat" data-a="pet" aria-label="Pet the rat">${RAT}</button><button class="bday-cake" data-a="cake" aria-label="Tap the cake for confetti">${CAKE}</button></div></div>`;
+        <div class="bday-pals"><button class="bday-cake" data-a="cake" aria-label="Tap the cake for confetti">${CAKE}</button></div>
+        <div class="rat-stage"><button class="bday-rat pose-sit" data-pose="sit" data-a="pet" aria-label="Pet the rat">${RAT}</button></div></div>`;
       setTimeout(() => confetti(el.querySelector('.bday'), 80), 400);
     } else {
       const tile = (v, l) => `<div class="cd-tile"><b>${String(v).padStart(2, '0')}</b><span>${l}</span></div>`;
@@ -227,7 +229,8 @@
           <div class="cd" role="timer" aria-live="off" aria-label="${st.months} months, ${st.days} days, ${st.hours} hours and ${st.mins} minutes to go">
             ${tile(st.months, st.months === 1 ? 'Month' : 'Months')}${tile(st.days, st.days === 1 ? 'Day' : 'Days')}${tile(st.hours, st.hours === 1 ? 'Hour' : 'Hours')}${tile(st.mins, st.mins === 1 ? 'Min' : 'Mins')}
           </div></div>
-        <div class="bday-pals"><button class="bday-rat" data-a="pet" aria-label="Pet the rat">${RAT}</button><button class="bday-cake" data-a="cake" aria-label="Tap the cake for confetti">${CAKE}</button></div></div>`;
+        <div class="bday-pals"><button class="bday-cake" data-a="cake" aria-label="Tap the cake for confetti">${CAKE}</button></div>
+        <div class="rat-stage"><button class="bday-rat pose-sit" data-pose="sit" data-a="pet" aria-label="Pet the rat">${RAT}</button></div></div>`;
     }
     bdayTimer = setInterval(updateBday, 15000);
   }
@@ -256,33 +259,97 @@
 
   // ---------- little rat sitting by the cake (only Helli) ----------
   // It stays put; only its head turns to look at the cursor (or where she taps on a phone).
-  const RAT = `<span class="rat-say">pet me</span><svg viewBox="0 0 100 100" aria-hidden="true">
-    <g class="rat-tail"><path d="M64 86c14 2 22-8 20-22-1-7 3-12 8-13" fill="none" stroke="#4a4a48" stroke-width="9" stroke-linecap="round"/>
-      <path d="M64 86c14 2 22-8 20-22-1-7 3-12 8-13" fill="none" stroke="#e58a95" stroke-width="5" stroke-linecap="round"/>
-      <path d="M64 86c14 2 22-8 20-22-1-7 3-12 8-13" fill="none" stroke="#b9525f" stroke-width="5" stroke-dasharray="1.6 4.4"/></g>
-    <g stroke="#4a4a48" stroke-width="3" fill="#b3b3ae" stroke-linejoin="round">
-      <ellipse cx="40" cy="92" rx="8" ry="4"/><ellipse cx="60" cy="92" rx="8" ry="4"/>
-      <path d="M33 66c0-10 8-15 17-15s17 5 17 15v14c0 8-7 12-17 12s-17-4-17-12z"/>
-    </g>
-    <path d="M42 72c1 4 4 5 6 2M52 74c2 3 5 2 6-2" fill="none" stroke="#4a4a48" stroke-width="2.6" stroke-linecap="round"/>
-    <g class="rat-head" transform="rotate(0 50 58)">
-      <g stroke="#4a4a48" stroke-width="3" fill="#b3b3ae">
-        <circle cx="27" cy="25" r="15"/><circle cx="73" cy="25" r="15"/>
-        <ellipse cx="50" cy="45" rx="25" ry="21.5"/>
-      </g>
-      <path d="M31 17c4-1 7 1 8 4M69 17c-4-1-7 1-8 4" fill="none" stroke="#4a4a48" stroke-width="2.4" stroke-linecap="round"/>
-      <g stroke="#4a4a48" stroke-width="2.2" stroke-linecap="round"><path d="M27 47l-13-2M27 51l-12 2M73 47l13-2M73 51l12 2"/></g>
+  // Four poses drawn in the same style; the walker below switches between them.
+  const RF = '#dcd7d1', RS = '#3f3a3a', RP = '#f2a9b9', RN = '#ee8fa5';
+  const RAT = `<span class="rat-say">pet me</span>
+  <svg class="rp rp-sit" viewBox="0 0 120 90" aria-hidden="true">
+    <path class="rat-tail" d="M74 84c20 2 30-10 24-24" fill="none" stroke="${RS}" stroke-width="1.8" stroke-linecap="round"/>
+    <g fill="${RF}" stroke="${RS}" stroke-width="2"><ellipse cx="52" cy="86" rx="7" ry="3"/><ellipse cx="68" cy="86" rx="7" ry="3"/><ellipse cx="60" cy="66" rx="18" ry="20"/></g>
+    <path d="M51 66c1 4 5 4 6 0M63 66c1 4 5 4 6 0" fill="none" stroke="${RS}" stroke-width="1.8" stroke-linecap="round"/>
+    <g class="rat-head" transform="rotate(0 60 56)">
+      <g stroke="${RS}" stroke-width="2"><circle cx="40" cy="24" r="14" fill="${RF}"/><circle cx="80" cy="24" r="14" fill="${RF}"/></g>
+      <circle cx="41" cy="25" r="8.5" fill="${RP}"/><circle cx="79" cy="25" r="8.5" fill="${RP}"/>
+      <ellipse cx="60" cy="41" rx="19" ry="16" fill="${RF}" stroke="${RS}" stroke-width="2"/>
+      <g stroke="${RS}" stroke-width="1.2" stroke-linecap="round"><path d="M44 46l-12-2M44 49l-11 2M76 46l12-2M76 49l11 2"/></g>
       <g class="rat-face" transform="translate(0 0)">
-        <ellipse class="rat-eye" cx="40" cy="44" rx="2.8" ry="3.6" fill="#4a4a48"/>
-        <ellipse class="rat-eye" cx="60" cy="44" rx="2.8" ry="3.6" fill="#4a4a48"/>
-        <path class="rat-happy" d="M36.5 45.5c1.2-3.4 5.8-3.4 7 0M56.5 45.5c1.2-3.4 5.8-3.4 7 0" fill="none" stroke="#4a4a48" stroke-width="2.4" stroke-linecap="round"/>
-        <ellipse cx="34.5" cy="51" rx="4.5" ry="3" fill="#f0a3ad" opacity=".75"/>
-        <ellipse cx="65.5" cy="51" rx="4.5" ry="3" fill="#f0a3ad" opacity=".75"/>
-        <ellipse cx="50" cy="47.5" rx="2.2" ry="1.6" fill="#e0606f"/>
-        <path d="M46.5 50.5c1 2 3 2 3.5 0 .5 2 2.5 2 3.5 0" fill="none" stroke="#e0606f" stroke-width="1.6" stroke-linecap="round"/>
+        <ellipse class="rat-eye" cx="53" cy="40" rx="2" ry="2.7" fill="${RS}"/><ellipse class="rat-eye" cx="67" cy="40" rx="2" ry="2.7" fill="${RS}"/>
+        <path class="rat-happy" d="M50.5 41c.8-2.6 4.2-2.6 5 0M64.5 41c.8-2.6 4.2-2.6 5 0" fill="none" stroke="${RS}" stroke-width="1.8" stroke-linecap="round"/>
+        <ellipse cx="48" cy="46" rx="3.5" ry="2.2" fill="${RP}" opacity=".6"/><ellipse cx="72" cy="46" rx="3.5" ry="2.2" fill="${RP}" opacity=".6"/>
+        <ellipse cx="60" cy="45.5" rx="2" ry="1.5" fill="${RN}"/>
+        <path d="M57.5 48c.8 1.5 2.2 1.5 2.5 0 .3 1.5 1.7 1.5 2.5 0" fill="none" stroke="${RS}" stroke-width="1.2" stroke-linecap="round"/>
       </g>
+    </g>
+  </svg>
+  <svg class="rp rp-walk" viewBox="0 0 120 90" aria-hidden="true">
+    <path class="rat-tail" d="M26 66C8 68 2 52 12 40" fill="none" stroke="${RS}" stroke-width="1.8" stroke-linecap="round"/>
+    <g class="walk-body">
+      <g fill="${RF}" stroke="${RS}" stroke-width="2"><ellipse class="leg-a" cx="38" cy="81" rx="6" ry="3"/><ellipse class="leg-b" cx="64" cy="81" rx="6" ry="3"/></g>
+      <ellipse cx="50" cy="66" rx="28" ry="15" fill="${RF}" stroke="${RS}" stroke-width="2"/>
+      <path d="M70 58c7-7 19-6 26 1l13 9c2 2 1 4-2 4l-24 2c-8 0-15-5-15-11z" fill="${RF}" stroke="${RS}" stroke-width="2" stroke-linejoin="round"/>
+      <ellipse cx="74" cy="50" rx="9" ry="11" transform="rotate(-18 74 50)" fill="${RF}" stroke="${RS}" stroke-width="2"/>
+      <ellipse cx="74.5" cy="50.5" rx="5" ry="7" transform="rotate(-18 74 50)" fill="${RP}"/>
+      <circle cx="91" cy="62" r="2" fill="${RS}"/><circle cx="109" cy="69" r="2.6" fill="${RN}"/>
+      <g stroke="${RS}" stroke-width="1.1" stroke-linecap="round"><path d="M104 68l12-4M104 70l12 1"/></g>
+    </g>
+  </svg>
+  <svg class="rp rp-lookup" viewBox="0 0 120 90" aria-hidden="true">
+    <path class="rat-tail" d="M36 84C16 86 8 72 16 60" fill="none" stroke="${RS}" stroke-width="1.8" stroke-linecap="round"/>
+    <g fill="${RF}" stroke="${RS}" stroke-width="2"><ellipse cx="56" cy="86" rx="9" ry="3"/><ellipse cx="50" cy="64" rx="17" ry="21"/></g>
+    <g fill="${RF}" stroke="${RS}" stroke-width="1.8"><ellipse cx="64" cy="56" rx="4" ry="2.6"/><ellipse cx="63" cy="63" rx="4" ry="2.6"/></g>
+    <g class="sniff">
+      <ellipse cx="68" cy="32" rx="16" ry="10" transform="rotate(-40 68 32)" fill="${RF}" stroke="${RS}" stroke-width="2"/>
+      <ellipse cx="56" cy="34" rx="8" ry="10" transform="rotate(-10 56 34)" fill="${RF}" stroke="${RS}" stroke-width="2"/>
+      <ellipse cx="56.5" cy="34.5" rx="4.5" ry="6.5" transform="rotate(-10 56 34)" fill="${RP}"/>
+      <circle cx="72" cy="27" r="2" fill="${RS}"/><circle class="nose" cx="80" cy="18.5" r="2.6" fill="${RN}"/>
+      <g stroke="${RS}" stroke-width="1.1" stroke-linecap="round"><path d="M78 20l9-6M79 22l11-2"/></g>
+    </g>
+  </svg>
+  <svg class="rp rp-rest" viewBox="0 0 120 90" aria-hidden="true">
+    <path class="rat-tail" d="M30 80C12 82 4 72 12 62" fill="none" stroke="${RS}" stroke-width="1.8" stroke-linecap="round"/>
+    <g class="rest-body">
+      <ellipse cx="54" cy="77" rx="27" ry="10" fill="${RF}" stroke="${RS}" stroke-width="2"/>
+      <path d="M72 70c6-4 16-3 21 2l11 6c2 1 1 3-1 3l-20 1c-7 0-12-3-12-7z" fill="${RF}" stroke="${RS}" stroke-width="2" stroke-linejoin="round"/>
+      <ellipse cx="77" cy="65" rx="7" ry="8.5" transform="rotate(-25 77 65)" fill="${RF}" stroke="${RS}" stroke-width="2"/>
+      <ellipse cx="77.4" cy="65.5" rx="3.8" ry="5.3" transform="rotate(-25 77 65)" fill="${RP}"/>
+      <path d="M86 73c1.5 1.4 3.5 1.4 5 0" fill="none" stroke="${RS}" stroke-width="1.6" stroke-linecap="round"/>
+      <circle cx="104" cy="79" r="2.3" fill="${RN}"/>
     </g>
   </svg>`;
+
+  // Wanders along the bottom of the birthday banner: walks somewhere, does a pose, walks again.
+  let ratWalkStarted = false;
+  const RAT_POSES = ['pose-sit', 'pose-walk', 'pose-lookup', 'pose-rest'];
+  function startRatWalk() {
+    if (ratWalkStarted) return; ratWalkStarted = true;
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const pickIdle = () => ['sit', 'sit', 'lookup', 'rest'][Math.floor(Math.random() * 4)];
+    let last = performance.now();
+    (function tick(now) {
+      const dt = Math.min(0.05, (now - last) / 1000); last = now;
+      const el = document.querySelector('#bday .bday-rat'), stage = el?.parentElement;
+      if (el && stage && stage.clientWidth) {
+        const W = Math.max(0, stage.clientWidth - el.offsetWidth);
+        const st = el._st || (el._st = { x: W * 0.75, dir: -1, pose: 'sit', until: now + 3500, target: 0 });
+        if (el._petUntil > now || reduce) { st.pose = 'sit'; st.until = Math.max(st.until, el._petUntil || 0); }
+        else if (st.pose === 'walk') {
+          const d = st.target - st.x;
+          if (Math.abs(d) < 2) { st.pose = pickIdle(); st.until = now + 2500 + Math.random() * 4000; }
+          else { st.dir = Math.sign(d); st.x += st.dir * Math.min(Math.abs(d), 60 * dt); }
+        } else if (now > st.until) {
+          if (W > 140 && Math.random() < 0.65) {
+            let t = Math.random() * W; for (let i = 0; i < 6 && Math.abs(t - st.x) < 90; i++) t = Math.random() * W;
+            st.target = t; st.pose = 'walk';
+          } else { st.pose = pickIdle(); st.until = now + 2500 + Math.random() * 3500; }
+        }
+        st.x = Math.max(0, Math.min(W, st.x));
+        el.style.transform = `translateX(${st.x.toFixed(1)}px)`;
+        if (el.dataset.pose !== st.pose) { el.classList.remove(...RAT_POSES); el.classList.add(`pose-${st.pose}`); el.dataset.pose = st.pose; }
+        el.classList.toggle('face-left', st.dir < 0);
+      }
+      requestAnimationFrame(tick);
+    })(performance.now());
+  }
+
   let ratLookStarted = false;
   function startRatLook() {
     if (ratLookStarted) return; ratLookStarted = true;
@@ -292,7 +359,7 @@
     let rot = 0, fx = 0, fy = 0;
     (function step() {
       const head = document.querySelector('#bday .rat-head');
-      const svg = document.querySelector('#bday .bday-rat svg');
+      const svg = document.querySelector('#bday .rp-sit');
       const box = svg && svg.getBoundingClientRect();
       if (head && box.width && px != null) {
         const cx = box.left + box.width * 0.5, cy = box.top + box.height * 0.45;
@@ -301,7 +368,7 @@
         rot += (ux * 14 * near - rot) * 0.15;
         fx += (ux * 5 * near - fx) * 0.15;
         fy += (uy * 3.5 * near - fy) * 0.15;
-        head.setAttribute('transform', `rotate(${rot.toFixed(2)} 50 58)`);
+        head.setAttribute('transform', `rotate(${rot.toFixed(2)} 60 56)`);
         head.querySelector('.rat-face').setAttribute('transform', `translate(${fx.toFixed(2)} ${fy.toFixed(2)})`);
       }
       requestAnimationFrame(step);
@@ -1026,6 +1093,7 @@
         h.style.cssText = `--dx:${(Math.random() * 50 - 25).toFixed(0)}px;--d:${i * 120}ms;left:${40 + Math.random() * 20}%`;
         t.appendChild(h); setTimeout(() => h.remove(), 1700);
       }
+      t._petUntil = performance.now() + 2600;
       t._petT = setTimeout(() => { t.classList.remove('petted'); say.textContent = 'pet me'; }, 1800);
     },
     cake: (t, e) => { t.classList.remove('wiggle'); void t.offsetWidth; t.classList.add('wiggle'); confetti($('#bday .bday'), 50, { x: e.clientX, y: e.clientY }); },
