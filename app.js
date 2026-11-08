@@ -157,6 +157,7 @@
     if (S.user) { const { data } = await sb.rpc('is_admin'); S.admin = data === true; }
     await load();
     maybeShowNote();
+    renderBday();
   }
 
   // ---------- little notes from tea towel (only for Helli) ----------
@@ -175,6 +176,83 @@
     "jace isn't real btw", "shelf's full. buy another shelf", 'tipi tipi break?', "you'd pick books over me",
     ['late', 'still reading? go to sleep'], ['morning', 'morning nerd'], 'red roses, or books? books, obviously',
   ];
+  // ---------- birthday countdown (only Helli) ----------
+  let helliCache = null;
+  async function isHelli() {
+    if (!S.user?.email || !crypto.subtle) return false;
+    if (helliCache?.email === S.user.email) return helliCache.ok;
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(S.user.email.trim().toLowerCase()));
+    const ok = [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('') === HELLI;
+    helliCache = { email: S.user.email, ok };
+    return ok;
+  }
+  // All maths in Sri Lanka time (UTC+5:30), using UTC getters on a shifted clock
+  const SL = 5.5 * 3600e3;
+  const addMonths = (t, m) => { const d = new Date(t); const day = d.getUTCDate(); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth() + m); const last = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).getUTCDate(); d.setUTCDate(Math.min(day, last)); return d.getTime(); };
+  function bdayState() {
+    const now = Date.now() + SL, d = new Date(now);
+    if (d.getUTCMonth() === 0 && d.getUTCDate() === 4) return { today: true, age: null };
+    let year = d.getUTCFullYear();
+    if (d.getUTCMonth() > 0 || d.getUTCDate() > 4) year += 1;
+    const target = Date.UTC(year, 0, 4);
+    let months = 0;
+    while (addMonths(now, months + 1) <= target) months++;
+    let rest = target - addMonths(now, months);
+    const days = Math.floor(rest / 864e5); rest -= days * 864e5;
+    const hours = Math.floor(rest / 36e5); rest -= hours * 36e5;
+    const mins = Math.floor(rest / 6e4);
+    return { today: false, months, days, hours, mins };
+  }
+  const BALLOONS = ['#a58bd0', '#f4a3c0', '#f6c453', '#8fd3c7', '#f7b38a'];
+  const balloon = (c, i) => `<button class="balloon" data-a="pop" style="--c:${c};--i:${i}" aria-label="Pop a balloon"><svg viewBox="0 0 40 70" aria-hidden="true"><ellipse cx="20" cy="20" rx="16" ry="19" fill="var(--c)"/><ellipse cx="14" cy="12" rx="4" ry="6" fill="#fff" opacity=".45"/><path d="M17 38h6l-3 4z" fill="var(--c)"/><path d="M20 42c-3 8 4 12 0 26" stroke="rgba(67,48,95,.35)" stroke-width="1.2" fill="none"/></svg></button>`;
+  const CAKE = `<svg viewBox="0 0 80 80" aria-hidden="true"><rect x="12" y="44" width="56" height="24" rx="6" fill="#f4a3c0"/><path d="M12 52c6 5 10-3 14 1s8 5 14 0 8-4 14 0 8 3 14-1" fill="none" stroke="#fff" stroke-width="3"/><rect x="18" y="30" width="44" height="16" rx="5" fill="#fbf4e6"/><path d="M18 36c5 4 8-2 11 1s7 4 11 0 7-3 11 0 7 2 11-1" fill="none" stroke="#a58bd0" stroke-width="2.4"/><rect x="38" y="16" width="4" height="14" rx="2" fill="#a58bd0"/><path class="flame" d="M40 6c4 5 3 9 0 10-3-1-4-5 0-10z" fill="#f6c453"/><rect x="8" y="66" width="64" height="5" rx="2.5" fill="#d9c6f2"/></svg>`;
+  let bdayTimer = null;
+  async function renderBday() {
+    const el = $('#bday'); if (!el) return;
+    clearInterval(bdayTimer);
+    if (!(await isHelli())) { el.innerHTML = ''; return; }
+    const st = bdayState();
+    const balloons = BALLOONS.map(balloon).join('');
+    if (st.today) {
+      el.innerHTML = `<div class="bday party"><div class="balloons">${balloons}</div>
+        <div class="bday-body"><p class="bday-kicker">4 January</p><h2 class="bday-title">Happy birthday, Helli!</h2>
+        <p class="bday-sub">today is all about you. tap the cake 🎂</p></div>
+        <button class="bday-cake" data-a="cake" aria-label="Tap the cake for confetti">${CAKE}</button></div>`;
+      setTimeout(() => confetti(el.querySelector('.bday'), 80), 400);
+    } else {
+      const tile = (v, l) => `<div class="cd-tile"><b>${String(v).padStart(2, '0')}</b><span>${l}</span></div>`;
+      el.innerHTML = `<div class="bday"><div class="balloons">${balloons}</div>
+        <div class="bday-body"><p class="bday-kicker">Countdown to 4 January</p><h2 class="bday-title">Helli's birthday</h2>
+          <div class="cd" role="timer" aria-live="off" aria-label="${st.months} months, ${st.days} days, ${st.hours} hours and ${st.mins} minutes to go">
+            ${tile(st.months, st.months === 1 ? 'Month' : 'Months')}${tile(st.days, st.days === 1 ? 'Day' : 'Days')}${tile(st.hours, st.hours === 1 ? 'Hour' : 'Hours')}${tile(st.mins, st.mins === 1 ? 'Min' : 'Mins')}
+          </div></div>
+        <button class="bday-cake" data-a="cake" aria-label="Tap the cake for confetti">${CAKE}</button></div>`;
+    }
+    bdayTimer = setInterval(updateBday, 15000);
+  }
+  function updateBday() {
+    const st = bdayState(), el = $('#bday .cd');
+    if (!el || st.today) { renderBday(); return; }
+    const vals = [st.months, st.days, st.hours, st.mins];
+    el.querySelectorAll('.cd-tile b').forEach((b, i) => {
+      const v = String(vals[i]).padStart(2, '0');
+      if (b.textContent !== v) { b.textContent = v; b.classList.remove('tick'); void b.offsetWidth; b.classList.add('tick'); }
+    });
+  }
+  function confetti(host, count = 40, from) {
+    if (!host || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const box = host.getBoundingClientRect();
+    const ox = from ? from.x - box.left : box.width / 2, oy = from ? from.y - box.top : box.height / 2;
+    for (let i = 0; i < count; i++) {
+      const p = document.createElement('i');
+      p.className = 'confetti';
+      const a = Math.random() * Math.PI * 2, v = 60 + Math.random() * 160;
+      p.style.cssText = `left:${ox}px;top:${oy}px;background:${BALLOONS[i % BALLOONS.length]};--dx:${Math.cos(a) * v}px;--dy:${Math.sin(a) * v - 60}px;--r:${Math.random() * 720 - 360}deg`;
+      host.appendChild(p);
+      setTimeout(() => p.remove(), 1400);
+    }
+  }
+
   let noteShown = false;
   async function maybeShowNote() {
     if (noteShown || !S.user?.email || !crypto.subtle) return;
@@ -881,6 +959,13 @@
       toast(`Deleted ${b.title}`, () => sb.from('books').insert({ ...b, is_lent: false }));
     },
     cover: (t) => openCoverSheet(t.dataset.id),
+    cake: (t, e) => { t.classList.remove('wiggle'); void t.offsetWidth; t.classList.add('wiggle'); confetti($('#bday .bday'), 50, { x: e.clientX, y: e.clientY }); },
+    pop: (t, e) => {
+      if (t.classList.contains('popped')) return;
+      confetti($('#bday .bday'), 18, { x: e.clientX, y: e.clientY });
+      t.classList.add('popped');
+      setTimeout(() => t.classList.remove('popped'), 2600); // floats back in
+    },
     jar: () => openJar(),
     'wish-grant': async (t) => {
       const x = S.wishes.find((w) => w.id === t.dataset.id); if (!x) return;
