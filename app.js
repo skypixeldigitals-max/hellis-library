@@ -211,14 +211,14 @@
     const el = $('#bday'); if (!el) return;
     clearInterval(bdayTimer);
     if (!(await isHelli())) { el.innerHTML = ''; return; }
-    startRat();
+    startRatLook();
     const st = bdayState();
     const balloons = BALLOONS.map(balloon).join('');
     if (st.today) {
       el.innerHTML = `<div class="bday party"><div class="balloons">${balloons}</div>
         <div class="bday-body"><p class="bday-kicker">4 January</p><h2 class="bday-title">Happy birthday, Helli!</h2>
         <p class="bday-sub">today is all about you. tap the cake 🎂</p></div>
-        <button class="bday-cake" data-a="cake" aria-label="Tap the cake for confetti">${CAKE}</button></div>`;
+        <div class="bday-pals"><span class="bday-rat" aria-hidden="true">${RAT}</span><button class="bday-cake" data-a="cake" aria-label="Tap the cake for confetti">${CAKE}</button></div></div>`;
       setTimeout(() => confetti(el.querySelector('.bday'), 80), 400);
     } else {
       const tile = (v, l) => `<div class="cd-tile"><b>${String(v).padStart(2, '0')}</b><span>${l}</span></div>`;
@@ -227,7 +227,7 @@
           <div class="cd" role="timer" aria-live="off" aria-label="${st.months} months, ${st.days} days, ${st.hours} hours and ${st.mins} minutes to go">
             ${tile(st.months, st.months === 1 ? 'Month' : 'Months')}${tile(st.days, st.days === 1 ? 'Day' : 'Days')}${tile(st.hours, st.hours === 1 ? 'Hour' : 'Hours')}${tile(st.mins, st.mins === 1 ? 'Min' : 'Mins')}
           </div></div>
-        <button class="bday-cake" data-a="cake" aria-label="Tap the cake for confetti">${CAKE}</button></div>`;
+        <div class="bday-pals"><span class="bday-rat" aria-hidden="true">${RAT}</span><button class="bday-cake" data-a="cake" aria-label="Tap the cake for confetti">${CAKE}</button></div></div>`;
     }
     bdayTimer = setInterval(updateBday, 15000);
   }
@@ -254,44 +254,57 @@
     }
   }
 
-  // ---------- little rat that follows the cursor (only Helli) ----------
-  // Mouse: trots after the pointer. Touch: scurries to wherever she taps. Never blocks clicks.
-  let ratStarted = false;
-  function startRat() {
-    if (ratStarted) return; ratStarted = true;
-    const rat = document.createElement('div');
-    rat.className = 'rat';
-    rat.setAttribute('aria-hidden', 'true');
-    rat.innerHTML = `<span class="rat-say">squeak!</span><svg viewBox="0 0 64 44">
-      <path class="rat-tail" d="M12 30c-6 0-10-4-9-9 1-4 5-5 7-3" fill="none" stroke="#f0a7b9" stroke-width="2.6" stroke-linecap="round"/>
-      <ellipse cx="28" cy="29" rx="17" ry="11" fill="#b9b1c9"/>
-      <ellipse cx="30" cy="32" rx="11" ry="6.5" fill="#e6e0ee"/>
-      <g class="rat-feet" fill="#f0a7b9"><ellipse cx="20" cy="39.5" rx="3.4" ry="2"/><ellipse cx="36" cy="39.5" rx="3.4" ry="2"/></g>
-      <circle cx="45" cy="23" r="10" fill="#c3bbd2"/>
-      <circle cx="41" cy="12" r="6.5" fill="#c3bbd2"/><circle cx="41" cy="12" r="4" fill="#f4c2cf"/>
-      <path d="M53 23c4 0 7 2 8 4-2 1-5 2-8 1z" fill="#c3bbd2"/>
-      <circle cx="61" cy="27" r="2" fill="#f08aa6"/>
-      <circle class="rat-eye" cx="48" cy="21" r="1.9" fill="#2b1a2a"/><circle cx="48.6" cy="20.4" r=".6" fill="#fff"/>
-      <ellipse cx="47" cy="27" rx="2.2" ry="1.3" fill="#f4a3c0" opacity=".6"/>
-      <g stroke="#8b829c" stroke-width=".7" stroke-linecap="round"><path d="M58 27l5-2M58 28h5.5M58 29l5 2"/></g>
-    </svg>`;
-    document.body.appendChild(rat);
-    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    let x = innerWidth - 80, y = innerHeight - 140, tx = x, ty = y, face = -1, lastMove = Date.now(), lastSay = 0;
-    const OFFSET = 14;
-    addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') { tx = e.clientX + OFFSET; ty = e.clientY + OFFSET; lastMove = Date.now(); } }, { passive: true });
-    addEventListener('pointerdown', (e) => { if (e.pointerType !== 'mouse') { tx = e.clientX - 32; ty = e.clientY + 8; lastMove = Date.now(); } }, { passive: true });
-    addEventListener('resize', () => { tx = Math.min(tx, innerWidth - 60); ty = Math.min(ty, innerHeight - 50); });
+  // ---------- little rat sitting by the cake (only Helli) ----------
+  // It stays put; only its head turns to look at the cursor (or where she taps on a phone).
+  const RAT = `<span class="rat-say">squeak!</span><svg viewBox="0 0 100 100" aria-hidden="true">
+    <g class="rat-tail"><path d="M64 86c14 2 22-8 20-22-1-7 3-12 8-13" fill="none" stroke="#4a4a48" stroke-width="9" stroke-linecap="round"/>
+      <path d="M64 86c14 2 22-8 20-22-1-7 3-12 8-13" fill="none" stroke="#e58a95" stroke-width="5" stroke-linecap="round"/>
+      <path d="M64 86c14 2 22-8 20-22-1-7 3-12 8-13" fill="none" stroke="#b9525f" stroke-width="5" stroke-dasharray="1.6 4.4"/></g>
+    <g stroke="#4a4a48" stroke-width="3" fill="#b3b3ae" stroke-linejoin="round">
+      <ellipse cx="40" cy="92" rx="8" ry="4"/><ellipse cx="60" cy="92" rx="8" ry="4"/>
+      <path d="M33 66c0-10 8-15 17-15s17 5 17 15v14c0 8-7 12-17 12s-17-4-17-12z"/>
+    </g>
+    <path d="M42 72c1 4 4 5 6 2M52 74c2 3 5 2 6-2" fill="none" stroke="#4a4a48" stroke-width="2.6" stroke-linecap="round"/>
+    <g class="rat-head" transform="rotate(0 50 58)">
+      <g stroke="#4a4a48" stroke-width="3" fill="#b3b3ae">
+        <circle cx="27" cy="25" r="15"/><circle cx="73" cy="25" r="15"/>
+        <ellipse cx="50" cy="45" rx="25" ry="21.5"/>
+      </g>
+      <path d="M31 17c4-1 7 1 8 4M69 17c-4-1-7 1-8 4" fill="none" stroke="#4a4a48" stroke-width="2.4" stroke-linecap="round"/>
+      <g stroke="#4a4a48" stroke-width="2.2" stroke-linecap="round"><path d="M27 47l-13-2M27 51l-12 2M73 47l13-2M73 51l12 2"/></g>
+      <g class="rat-face" transform="translate(0 0)">
+        <ellipse class="rat-eye" cx="40" cy="44" rx="2.8" ry="3.6" fill="#4a4a48"/>
+        <ellipse class="rat-eye" cx="60" cy="44" rx="2.8" ry="3.6" fill="#4a4a48"/>
+        <ellipse cx="34.5" cy="51" rx="4.5" ry="3" fill="#f0a3ad" opacity=".75"/>
+        <ellipse cx="65.5" cy="51" rx="4.5" ry="3" fill="#f0a3ad" opacity=".75"/>
+        <ellipse cx="50" cy="47.5" rx="2.2" ry="1.6" fill="#e0606f"/>
+        <path d="M46.5 50.5c1 2 3 2 3.5 0 .5 2 2.5 2 3.5 0" fill="none" stroke="#e0606f" stroke-width="1.6" stroke-linecap="round"/>
+      </g>
+    </g>
+  </svg>`;
+  let ratLookStarted = false;
+  function startRatLook() {
+    if (ratLookStarted) return; ratLookStarted = true;
+    let px = null, py = null, lastMove = Date.now(), lastSay = 0;
+    addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') { px = e.clientX; py = e.clientY; lastMove = Date.now(); } }, { passive: true });
+    addEventListener('pointerdown', (e) => { px = e.clientX; py = e.clientY; lastMove = Date.now(); }, { passive: true });
+    let rot = 0, fx = 0, fy = 0;
     (function step() {
-      const dx = tx - x, dy = ty - y, dist = Math.hypot(dx, dy);
-      if (reduce) { x = tx; y = ty; } else { x += dx * 0.12; y += dy * 0.12; }
-      if (Math.abs(dx) > 2) face = dx > 0 ? 1 : -1;
-      x = Math.max(0, Math.min(x, innerWidth - 56)); y = Math.max(0, Math.min(y, innerHeight - 42));
-      rat.style.transform = `translate3d(${x}px, ${y}px, 0)`;
-      rat.classList.toggle('run', dist > 3 && !reduce);
-      rat.classList.toggle('flip', face < 0);
-      const idle = Date.now() - lastMove;
-      if (idle > 6000 && Date.now() - lastSay > 25000) { lastSay = Date.now(); rat.classList.add('say'); setTimeout(() => rat.classList.remove('say'), 1600); }
+      const head = document.querySelector('#bday .rat-head');
+      const svg = document.querySelector('#bday .bday-rat svg');
+      const box = svg && svg.getBoundingClientRect();
+      if (head && box.width && px != null) {
+        const cx = box.left + box.width * 0.5, cy = box.top + box.height * 0.45;
+        const dx = px - cx, dy = py - cy, d = Math.hypot(dx, dy) || 1;
+        const ux = dx / d, uy = dy / d, near = Math.min(1, d / 120);
+        rot += (ux * 14 * near - rot) * 0.15;
+        fx += (ux * 5 * near - fx) * 0.15;
+        fy += (uy * 3.5 * near - fy) * 0.15;
+        head.setAttribute('transform', `rotate(${rot.toFixed(2)} 50 58)`);
+        head.querySelector('.rat-face').setAttribute('transform', `translate(${fx.toFixed(2)} ${fy.toFixed(2)})`);
+      }
+      const rat = document.querySelector('#bday .bday-rat');
+      if (rat && Date.now() - lastMove > 6000 && Date.now() - lastSay > 25000) { lastSay = Date.now(); rat.classList.add('say'); setTimeout(() => rat.classList.remove('say'), 1600); }
       requestAnimationFrame(step);
     })();
   }
