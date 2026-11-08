@@ -218,7 +218,7 @@
       el.innerHTML = `<div class="bday party"><div class="balloons">${balloons}</div>
         <div class="bday-body"><p class="bday-kicker">4 January</p><h2 class="bday-title">Happy birthday, Helli!</h2>
         <p class="bday-sub">today is all about you. tap the cake 🎂</p></div>
-        <div class="bday-pals"><span class="bday-rat" aria-hidden="true">${RAT}</span><button class="bday-cake" data-a="cake" aria-label="Tap the cake for confetti">${CAKE}</button></div></div>`;
+        <div class="bday-pals"><button class="bday-rat" data-a="pet" aria-label="Pet the rat">${RAT}</button><button class="bday-cake" data-a="cake" aria-label="Tap the cake for confetti">${CAKE}</button></div></div>`;
       setTimeout(() => confetti(el.querySelector('.bday'), 80), 400);
     } else {
       const tile = (v, l) => `<div class="cd-tile"><b>${String(v).padStart(2, '0')}</b><span>${l}</span></div>`;
@@ -227,7 +227,7 @@
           <div class="cd" role="timer" aria-live="off" aria-label="${st.months} months, ${st.days} days, ${st.hours} hours and ${st.mins} minutes to go">
             ${tile(st.months, st.months === 1 ? 'Month' : 'Months')}${tile(st.days, st.days === 1 ? 'Day' : 'Days')}${tile(st.hours, st.hours === 1 ? 'Hour' : 'Hours')}${tile(st.mins, st.mins === 1 ? 'Min' : 'Mins')}
           </div></div>
-        <div class="bday-pals"><span class="bday-rat" aria-hidden="true">${RAT}</span><button class="bday-cake" data-a="cake" aria-label="Tap the cake for confetti">${CAKE}</button></div></div>`;
+        <div class="bday-pals"><button class="bday-rat" data-a="pet" aria-label="Pet the rat">${RAT}</button><button class="bday-cake" data-a="cake" aria-label="Tap the cake for confetti">${CAKE}</button></div></div>`;
     }
     bdayTimer = setInterval(updateBday, 15000);
   }
@@ -256,7 +256,7 @@
 
   // ---------- little rat sitting by the cake (only Helli) ----------
   // It stays put; only its head turns to look at the cursor (or where she taps on a phone).
-  const RAT = `<span class="rat-say">squeak!</span><svg viewBox="0 0 100 100" aria-hidden="true">
+  const RAT = `<span class="rat-say">pet me</span><svg viewBox="0 0 100 100" aria-hidden="true">
     <g class="rat-tail"><path d="M64 86c14 2 22-8 20-22-1-7 3-12 8-13" fill="none" stroke="#4a4a48" stroke-width="9" stroke-linecap="round"/>
       <path d="M64 86c14 2 22-8 20-22-1-7 3-12 8-13" fill="none" stroke="#e58a95" stroke-width="5" stroke-linecap="round"/>
       <path d="M64 86c14 2 22-8 20-22-1-7 3-12 8-13" fill="none" stroke="#b9525f" stroke-width="5" stroke-dasharray="1.6 4.4"/></g>
@@ -275,6 +275,7 @@
       <g class="rat-face" transform="translate(0 0)">
         <ellipse class="rat-eye" cx="40" cy="44" rx="2.8" ry="3.6" fill="#4a4a48"/>
         <ellipse class="rat-eye" cx="60" cy="44" rx="2.8" ry="3.6" fill="#4a4a48"/>
+        <path class="rat-happy" d="M36.5 45.5c1.2-3.4 5.8-3.4 7 0M56.5 45.5c1.2-3.4 5.8-3.4 7 0" fill="none" stroke="#4a4a48" stroke-width="2.4" stroke-linecap="round"/>
         <ellipse cx="34.5" cy="51" rx="4.5" ry="3" fill="#f0a3ad" opacity=".75"/>
         <ellipse cx="65.5" cy="51" rx="4.5" ry="3" fill="#f0a3ad" opacity=".75"/>
         <ellipse cx="50" cy="47.5" rx="2.2" ry="1.6" fill="#e0606f"/>
@@ -285,9 +286,9 @@
   let ratLookStarted = false;
   function startRatLook() {
     if (ratLookStarted) return; ratLookStarted = true;
-    let px = null, py = null, lastMove = Date.now(), lastSay = 0;
-    addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') { px = e.clientX; py = e.clientY; lastMove = Date.now(); } }, { passive: true });
-    addEventListener('pointerdown', (e) => { px = e.clientX; py = e.clientY; lastMove = Date.now(); }, { passive: true });
+    let px = null, py = null;
+    addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') { px = e.clientX; py = e.clientY; } }, { passive: true });
+    addEventListener('pointerdown', (e) => { px = e.clientX; py = e.clientY; }, { passive: true });
     let rot = 0, fx = 0, fy = 0;
     (function step() {
       const head = document.querySelector('#bday .rat-head');
@@ -303,8 +304,6 @@
         head.setAttribute('transform', `rotate(${rot.toFixed(2)} 50 58)`);
         head.querySelector('.rat-face').setAttribute('transform', `translate(${fx.toFixed(2)} ${fy.toFixed(2)})`);
       }
-      const rat = document.querySelector('#bday .bday-rat');
-      if (rat && Date.now() - lastMove > 6000 && Date.now() - lastSay > 25000) { lastSay = Date.now(); rat.classList.add('say'); setTimeout(() => rat.classList.remove('say'), 1600); }
       requestAnimationFrame(step);
     })();
   }
@@ -1015,6 +1014,20 @@
       toast(`Deleted ${b.title}`, () => sb.from('books').insert({ ...b, is_lent: false }));
     },
     cover: (t) => openCoverSheet(t.dataset.id),
+    pet: (t) => {
+      const REPLIES = ['hehe', 'more pls', '♡', 'squeak!', 'thank u', 'again!', 'best human'];
+      const say = t.querySelector('.rat-say');
+      clearTimeout(t._petT);
+      say.textContent = REPLIES[Math.floor(Math.random() * REPLIES.length)];
+      t.classList.remove('petted'); void t.offsetWidth; t.classList.add('petted');
+      for (let i = 0; i < 4; i++) {
+        const h = document.createElement('span');
+        h.className = 'rat-heart'; h.textContent = '♥';
+        h.style.cssText = `--dx:${(Math.random() * 50 - 25).toFixed(0)}px;--d:${i * 120}ms;left:${40 + Math.random() * 20}%`;
+        t.appendChild(h); setTimeout(() => h.remove(), 1700);
+      }
+      t._petT = setTimeout(() => { t.classList.remove('petted'); say.textContent = 'pet me'; }, 1800);
+    },
     cake: (t, e) => { t.classList.remove('wiggle'); void t.offsetWidth; t.classList.add('wiggle'); confetti($('#bday .bday'), 50, { x: e.clientX, y: e.clientY }); },
     pop: (t, e) => {
       if (t.classList.contains('popped')) return;

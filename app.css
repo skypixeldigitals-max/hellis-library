@@ -544,3 +544,19 @@ h2 > span { margin-left: auto; }
   .bday-title { padding-right: 116px; }
 }
 @media (prefers-reduced-motion: reduce) { .rat-tail, .rat-eye { animation: none !important; } }
+
+/* ---------- petting the rat ---------- */
+button.bday-rat { padding: 0; cursor: pointer; touch-action: manipulation; }
+.bday-rat .rat-say { opacity: 1; transform: translate(-50%, -4px); animation: bob 2.4s ease-in-out infinite; font-size: 17px; padding: 2px 10px; }
+.bday-rat .rat-say::after { content: ''; position: absolute; left: 50%; bottom: -4px; width: 8px; height: 8px; background: #fff; transform: translateX(-50%) rotate(45deg); }
+@keyframes bob { 50% { transform: translate(-50%, -8px); } }
+.rat-happy { opacity: 0; }
+.bday-rat.petted .rat-eye { opacity: 0; }
+.bday-rat.petted .rat-happy { opacity: 1; }
+.bday-rat.petted svg { animation: pet-hop .5s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes pet-hop { 40% { transform: translateY(-8px) scale(1.06, .96); } }
+.bday-rat.petted .rat-say { color: #e0606f; }
+.bday-rat:focus-visible { outline: 2px solid #fff; outline-offset: 2px; border-radius: 12px; }
+.rat-heart { position: absolute; bottom: 60%; color: #f4a3c0; font-size: 18px; pointer-events: none; text-shadow: 0 1px 2px rgba(0, 0, 0, .2); animation: heart-up 1.4s ease-out var(--d) both; }
+@keyframes heart-up { from { transform: translate(0, 0) scale(.6); opacity: 0; } 15% { opacity: 1; } to { transform: translate(var(--dx), -70px) scale(1.2); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .bday-rat .rat-say { animation: none; } .bday-rat.petted svg { animation: none; } }
