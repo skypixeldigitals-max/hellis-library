@@ -59,6 +59,10 @@ Deno.serve(async (req) => {
     const c = core(d.title);
     if (!d.cover_i || c.length < 3 || seen.has(c) || isSeriesNumber(c) || isOwned(d.title) || wanted.has(c)) return false;
     if (JUNK.test(d.title) || FOREIGN.test(d.title) || (d.language && !d.language.includes('eng'))) return false;
+    // "Freed" next to "Fifty Shades Freed" (same author) reads as the same book twice: keep the first
+    const who = norm(d.author_name?.[0] ?? '');
+    const within = (a: string, b: string) => ` ${a} `.includes(` ${b} `);
+    if (picks.some((p) => norm(p.author ?? '') === who && (within(core(p.title), c) || within(c, core(p.title))))) return false;
     seen.add(c);
     picks.push({ title: clean(d.title), author: d.author_name?.[0] ?? null, cover_url: cover(d.cover_i), reason, private: false, rank });
     return true;
@@ -97,6 +101,26 @@ Deno.serve(async (req) => {
   }
 
   const rows = picks.sort((a, b) => a.rank - b.rank).slice(0, 24);
+  // Open Library covers take seconds to load. Keep a copy in our own 'covers' bucket (one file per
+  // cover id, reused on later rebuilds) so the slideshow loads as fast as the shelf.
+  await Promise.all(rows.map(async (r) => {
+    const id = r.cover_url?.match(/covers\.openlibrary\.org\/b\/id\/(\d+)-/)?.[1];
+    if (!id) return;
+    const path = `next/${id}.webp`;
+    const stored = sb.storage.from('covers').getPublicUrl(path).data.publicUrl;
+    try {
+      const have = await fetch(stored, { method: 'HEAD', signal: AbortSignal.timeout(8000) });
+      if (!have.ok) {
+        const img = await fetch(`https://wsrv.nl/?url=${encodeURIComponent(r.cover_url!)}&w=400&output=webp&q=82`, { signal: AbortSignal.timeout(20000) });
+        if (!img.ok || !(img.headers.get('content-type') ?? '').startsWith('image/webp')) return;
+        const bytes = new Uint8Array(await img.arrayBuffer());
+        if (bytes.length < 1000) return; // 1x1 "no cover" placeholder
+        const up = await sb.storage.from('covers').upload(path, bytes, { contentType: 'image/webp', cacheControl: '31536000', upsert: true });
+        if (up.error) return;
+      }
+      r.cover_url = stored;
+    } catch { /* keep the Open Library link */ }
+  }));
   await sb.from('next_reads').delete().gte('id', 0);
   if (rows.length) {
     const { error } = await sb.from('next_reads').insert(rows);

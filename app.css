@@ -480,9 +480,6 @@ h2 > span { margin-left: auto; }
 .wish-form textarea { flex: 1; min-width: 0; min-height: 52px; resize: vertical; border: 1.5px solid var(--line-strong); border-radius: 10px; padding: 10px 12px; background: var(--bg); font-size: 17px; }
 .wish-form textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--ring); }
 .wish-hint { font-size: 14px; margin: 6px 0 12px; }
-.wish-ideas { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 4px; }
-.wish-ideas .chip { min-height: 44px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--lav-line); background: var(--lav-soft); color: var(--title); font-size: 15px; }
-.wish-ideas .chip:hover { border-color: var(--accent); }
 .shake-btn { margin-top: 6px; }
 .shake-out:empty { display: none; }
 .shake-note { margin: 10px 0 4px; padding: 12px 14px; border-radius: 12px; background: linear-gradient(135deg, #fff6d8, var(--card)); border: 1px solid #f1d98a; animation: rise .3s var(--ease) both; }
@@ -607,3 +604,8 @@ button.bday-rat { padding: 0; cursor: pointer; touch-action: manipulation; }
   .bday-title { padding-right: 70px; }
 }
 @media (prefers-reduced-motion: reduce) { .leg-a, .leg-b, .walk-body, .sniff, .nose, .rest-body { animation: none !important; } }
+.jar-say { position: relative; justify-self: start; font-family: var(--display); font-size: 19px; line-height: 1.15; color: var(--title); background: var(--card); border: 1px solid var(--lav-line); border-radius: 12px; padding: 4px 10px; margin: 2px 0 3px; }
+.jar-say::before { content: ''; position: absolute; left: -6px; top: 50%; width: 10px; height: 10px; background: inherit; border-left: 1px solid var(--lav-line); border-bottom: 1px solid var(--lav-line); transform: translateY(-50%) rotate(45deg); }
+.jar-big { position: relative; }
+.jar-say.big { position: absolute; left: calc(50% + 78px); top: 44px; margin: 0; white-space: nowrap; animation: rise .3s var(--ease) both; }
+@media (max-width: 480px) { .jar-say.big { position: static; margin-top: 6px; } .jar-say.big::before { left: 50%; top: -6px; transform: translateX(-50%) rotate(135deg); } }

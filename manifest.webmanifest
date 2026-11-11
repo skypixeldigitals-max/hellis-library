@@ -1,0 +1,14 @@
+{
+  "name": "Helli's Library",
+  "short_name": "Library",
+  "description": "Helli's books: what she owns, what she's reading, and what's for sale.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4ead8",
+  "theme_color": "#f4ead8",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

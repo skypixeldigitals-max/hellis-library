@@ -523,35 +523,28 @@
       <path d="M58 30c3-4 9-4 12 0" stroke="#7356a0" stroke-width="1.6" fill="none"/>
     </svg>`;
   }
-  // Gentle starters so a blank box never feels like homework. Tapping one fills the box.
-  const WISH_IDEAS = [
-    ['📚', 'A book I keep eyeing: '], ['🍬', 'Something small and sweet: '], ['✈️', 'A place I want to go: '],
-    ['☕', 'A treat just for me: '], ['🎁', "Something I'd never buy myself: "], ['✨', 'A tiny dream: '],
-  ];
+  // The jar talks: it asks to be fed, and says thanks right after a wish.
+  const JAR_HUNGRY = ['feed me wishes', "i'm hungry", 'one more?', 'got a wish for me?', 'psst. wish?'];
+  const JAR_FED = ['yum ✨', 'mmm, good one', 'more please'];
+  const pick = (a) => a[Math.floor(Math.random() * a.length)];
+  const jarSay = (fed) => (fed ? pick(JAR_FED) : (S.wishes || []).length ? pick(JAR_HUNGRY) : 'feed me your first wish');
   const daysSinceWish = () => {
     const w = S.wishes || [];
     return w.length ? (Date.now() - Math.max(...w.map((x) => new Date(x.created_at)))) / 864e5 : Infinity;
   };
-  function jarNudge() {
-    const w = S.wishes || [], granted = w.filter((x) => x.granted).length;
-    if (!w.length) return 'Drop in your first wish';
-    if (daysSinceWish() >= 2) return 'Anything new on your mind?';
-    return granted ? `${granted} granted ✨` : 'Add another, there is room';
-  }
-  function renderJar() {
+  function renderJar(fed) {
     const el = $('#jar'); if (!el) return;
     if (!S.admin) { el.innerHTML = ''; return; }
-    const w = S.wishes || [];
-    el.innerHTML = `<button class="jar-card${daysSinceWish() >= 2 ? ' nudge' : ''}" data-a="jar">${jarSvg(w.slice(-15))}<span class="jar-text"><span class="k">Wish jar</span><b>${w.length ? `${w.length} wish${w.length === 1 ? '' : 'es'} inside` : 'Make a wish'}</b><small>${jarNudge()}</small></span></button>`;
+    const w = S.wishes || [], granted = w.filter((x) => x.granted).length;
+    el.innerHTML = `<button class="jar-card${daysSinceWish() >= 2 ? ' nudge' : ''}" data-a="jar">${jarSvg(w.slice(-15))}<span class="jar-text"><span class="k">Wish jar</span><span class="jar-say">${esc(jarSay(fed))}</span><small>${w.length ? `${w.length} wish${w.length === 1 ? '' : 'es'} inside${granted ? ` · ${granted} granted ✨` : ''}` : 'Only you two can see it'}</small></span></button>`;
   }
   function openJar(newId) {
     const w = S.wishes || [];
     sheet(`<div class="sheet-head"><h3 id="sheetTitle">Wish jar</h3>${closeBtn}</div>
-      <div class="jar-big">${jarSvg(w, newId)}</div>
+      <div class="jar-big">${jarSvg(w, newId)}<span class="jar-say big" aria-live="polite">${esc(jarSay(!!newId))}</span></div>
       <form id="wishForm" class="wish-form"><label for="wishIn" class="sr">Your wish</label>
-        <textarea id="wishIn" maxlength="280" rows="2" placeholder="${['I wish…', 'Anything, big or tiny…', 'What would make you smile?'][Math.floor(Math.random() * 3)]}" required></textarea>
+        <textarea id="wishIn" maxlength="280" rows="2" placeholder="I wish…" required></textarea>
         <button class="primary" type="submit">${ic('sparkle')}Drop it in</button></form>
-      <div class="wish-ideas" role="group" aria-label="Wish ideas">${WISH_IDEAS.map(([e, t]) => `<button type="button" class="chip" data-a="wish-idea" data-t="${esc(t)}">${e} ${esc(t.replace(/:\s*$/, ''))}</button>`).join('')}</div>
       ${w.length ? `<button type="button" class="ghost shake-btn" data-a="wish-shake">${ic('sparkle')}Shake the jar</button><div id="shakeOut" class="shake-out" aria-live="polite"></div>` : ''}
       <p class="muted wish-hint">Only you two can see these. Big, small, silly, all welcome.</p>
       <div class="wish-list">${w.length ? [...w].reverse().map((x, i) => `<div class="wish${x.granted ? ' granted' : ''}" style="--i:${i}">
@@ -1122,7 +1115,6 @@
       setTimeout(() => t.classList.remove('popped'), 2600); // floats back in
     },
     jar: () => openJar(),
-    'wish-idea': (t) => { const box = $('#wishIn'); if (!box) return; box.value = t.dataset.t; box.focus(); box.setSelectionRange(box.value.length, box.value.length); },
     'wish-shake': () => {
       const w = S.wishes || []; if (!w.length) return;
       const pool = w.length > 1 ? w.filter((x) => x.id !== S.lastShake) : w;
@@ -1272,7 +1264,7 @@
       const btn = e.target.querySelector('button'); btn.disabled = true;
       const { data, error } = await sb.from('wishes').insert({ text }).select().single();
       if (error) { btn.disabled = false; toast(`Couldn't add the wish: ${error.message}`); return; }
-      S.wishes.push(data); renderJar(); openJar(data.id); toast(['Wish dropped in the jar ✨', 'Saved. Got another? ✨', 'In the jar. Keep them coming ✨'][Math.floor(Math.random() * 3)]);
+      S.wishes.push(data); renderJar(true); openJar(data.id); toast('Wish dropped in the jar ✨');
       return;
     }
     if (e.target.id === 'pwForm') {
@@ -1309,4 +1301,13 @@
     if (e.key === 'Escape' && document.body.classList.contains('open')) closeSheet();
     if (e.key === 'Enter' && e.target.id === 'lendto') { e.preventDefault(); $('[data-a=lend]')?.click(); }
   });
+
+  // ---------- offline ----------
+  // sw.js keeps the last copy of the shelf so it still opens with no signal (read-only until back online).
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+    window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+  }
+  window.addEventListener('offline', () => toast("You're offline. Showing the last saved shelf."));
+  window.addEventListener('online', () => { toast('Back online'); sb.auth.getSession().then(({ data }) => refreshAuth(data.session)); });
+  if (!navigator.onLine) setTimeout(() => toast("You're offline. Showing the last saved shelf."), 1200);
 })();
