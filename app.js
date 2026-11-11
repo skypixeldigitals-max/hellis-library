@@ -523,25 +523,43 @@
       <path d="M58 30c3-4 9-4 12 0" stroke="#7356a0" stroke-width="1.6" fill="none"/>
     </svg>`;
   }
+  // Gentle starters so a blank box never feels like homework. Tapping one fills the box.
+  const WISH_IDEAS = [
+    ['📚', 'A book I keep eyeing: '], ['🍬', 'Something small and sweet: '], ['✈️', 'A place I want to go: '],
+    ['☕', 'A treat just for me: '], ['🎁', "Something I'd never buy myself: "], ['✨', 'A tiny dream: '],
+  ];
+  const daysSinceWish = () => {
+    const w = S.wishes || [];
+    return w.length ? (Date.now() - Math.max(...w.map((x) => new Date(x.created_at)))) / 864e5 : Infinity;
+  };
+  function jarNudge() {
+    const w = S.wishes || [], granted = w.filter((x) => x.granted).length;
+    if (!w.length) return 'Drop in your first wish';
+    if (daysSinceWish() >= 2) return 'Anything new on your mind?';
+    return granted ? `${granted} granted ✨` : 'Add another, there is room';
+  }
   function renderJar() {
     const el = $('#jar'); if (!el) return;
     if (!S.admin) { el.innerHTML = ''; return; }
     const w = S.wishes || [];
-    el.innerHTML = `<button class="jar-card" data-a="jar">${jarSvg(w.slice(-15))}<span class="jar-text"><span class="k">Wish jar</span><b>${w.length ? `${w.length} wish${w.length === 1 ? '' : 'es'} inside` : 'Make a wish'}</b><small>${w.filter((x) => x.granted).length ? `${w.filter((x) => x.granted).length} granted ✨` : 'Only you two can see it'}</small></span></button>`;
+    el.innerHTML = `<button class="jar-card${daysSinceWish() >= 2 ? ' nudge' : ''}" data-a="jar">${jarSvg(w.slice(-15))}<span class="jar-text"><span class="k">Wish jar</span><b>${w.length ? `${w.length} wish${w.length === 1 ? '' : 'es'} inside` : 'Make a wish'}</b><small>${jarNudge()}</small></span></button>`;
   }
   function openJar(newId) {
     const w = S.wishes || [];
     sheet(`<div class="sheet-head"><h3 id="sheetTitle">Wish jar</h3>${closeBtn}</div>
       <div class="jar-big">${jarSvg(w, newId)}</div>
       <form id="wishForm" class="wish-form"><label for="wishIn" class="sr">Your wish</label>
-        <textarea id="wishIn" maxlength="280" rows="2" placeholder="I wish…" required></textarea>
+        <textarea id="wishIn" maxlength="280" rows="2" placeholder="${['I wish…', 'Anything, big or tiny…', 'What would make you smile?'][Math.floor(Math.random() * 3)]}" required></textarea>
         <button class="primary" type="submit">${ic('sparkle')}Drop it in</button></form>
-      <p class="muted wish-hint">Only you two can see these.</p>
+      <div class="wish-ideas" role="group" aria-label="Wish ideas">${WISH_IDEAS.map(([e, t]) => `<button type="button" class="chip" data-a="wish-idea" data-t="${esc(t)}">${e} ${esc(t.replace(/:\s*$/, ''))}</button>`).join('')}</div>
+      ${w.length ? `<button type="button" class="ghost shake-btn" data-a="wish-shake">${ic('sparkle')}Shake the jar</button><div id="shakeOut" class="shake-out" aria-live="polite"></div>` : ''}
+      <p class="muted wish-hint">Only you two can see these. Big, small, silly, all welcome.</p>
       <div class="wish-list">${w.length ? [...w].reverse().map((x, i) => `<div class="wish${x.granted ? ' granted' : ''}" style="--i:${i}">
           <span class="wish-star" style="color:${STAR_COLORS[[...x.id].reduce((a, c) => a + c.charCodeAt(0), 0) % STAR_COLORS.length]}">${ic('star')}</span>
           <div class="grow"><p>${esc(x.text)}</p><small>${shortDate(x.created_at)}${x.granted ? ' · granted ✨' : ''}</small></div>
           <div class="wish-acts"><button class="ghost" data-a="wish-grant" data-id="${x.id}">${x.granted ? 'Undo' : 'Granted'}</button><button class="ghost danger" data-a="wish-x" data-id="${x.id}" aria-label="Remove wish">${ic('x')}</button></div>
         </div>`).join('') : '<p class="muted" style="text-align:center;padding:12px 0">The jar is empty. Make the first wish ✨</p>'}</div>`);
+    if (newId) setTimeout(() => { const t = $('#wishIn'); if (t) t.focus(); }, 60); // ready for the next one
   }
 
   function viewSeries() {
@@ -1104,6 +1122,15 @@
       setTimeout(() => t.classList.remove('popped'), 2600); // floats back in
     },
     jar: () => openJar(),
+    'wish-idea': (t) => { const box = $('#wishIn'); if (!box) return; box.value = t.dataset.t; box.focus(); box.setSelectionRange(box.value.length, box.value.length); },
+    'wish-shake': () => {
+      const w = S.wishes || []; if (!w.length) return;
+      const pool = w.length > 1 ? w.filter((x) => x.id !== S.lastShake) : w;
+      const x = pool[Math.floor(Math.random() * pool.length)];
+      S.lastShake = x.id;
+      const svg = $('.jar-big .jar-svg'); if (svg) { svg.classList.remove('shaking'); void svg.getBoundingClientRect(); svg.classList.add('shaking'); }
+      const out = $('#shakeOut'); if (out) out.innerHTML = `<div class="shake-note"><p>${esc(x.text)}</p><small>${shortDate(x.created_at)}${x.granted ? ' · granted ✨' : ''}</small></div>`;
+    },
     'wish-grant': async (t) => {
       const x = S.wishes.find((w) => w.id === t.dataset.id); if (!x) return;
       x.granted = !x.granted; openJar(); renderJar();
@@ -1245,7 +1272,7 @@
       const btn = e.target.querySelector('button'); btn.disabled = true;
       const { data, error } = await sb.from('wishes').insert({ text }).select().single();
       if (error) { btn.disabled = false; toast(`Couldn't add the wish: ${error.message}`); return; }
-      S.wishes.push(data); renderJar(); openJar(data.id); toast('Wish dropped in the jar ✨');
+      S.wishes.push(data); renderJar(); openJar(data.id); toast(['Wish dropped in the jar ✨', 'Saved. Got another? ✨', 'In the jar. Keep them coming ✨'][Math.floor(Math.random() * 3)]);
       return;
     }
     if (e.target.id === 'pwForm') {

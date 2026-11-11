@@ -480,6 +480,19 @@ h2 > span { margin-left: auto; }
 .wish-form textarea { flex: 1; min-width: 0; min-height: 52px; resize: vertical; border: 1.5px solid var(--line-strong); border-radius: 10px; padding: 10px 12px; background: var(--bg); font-size: 17px; }
 .wish-form textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--ring); }
 .wish-hint { font-size: 14px; margin: 6px 0 12px; }
+.wish-ideas { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 4px; }
+.wish-ideas .chip { min-height: 44px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--lav-line); background: var(--lav-soft); color: var(--title); font-size: 15px; }
+.wish-ideas .chip:hover { border-color: var(--accent); }
+.shake-btn { margin-top: 6px; }
+.shake-out:empty { display: none; }
+.shake-note { margin: 10px 0 4px; padding: 12px 14px; border-radius: 12px; background: linear-gradient(135deg, #fff6d8, var(--card)); border: 1px solid #f1d98a; animation: rise .3s var(--ease) both; }
+.shake-note p { font-size: 19px; line-height: 1.35; color: var(--title); overflow-wrap: anywhere; }
+.shake-note small { color: var(--muted); font-size: 13px; }
+.jar-svg.shaking { animation: jar-shake .6s ease; transform-origin: 50% 90%; }
+@keyframes jar-shake { 15% { transform: rotate(-9deg); } 35% { transform: rotate(8deg); } 55% { transform: rotate(-6deg); } 75% { transform: rotate(4deg); } }
+.jar-card.nudge { border-color: var(--accent); animation: jar-glow 2.6s ease-in-out infinite; }
+@keyframes jar-glow { 50% { box-shadow: 0 0 0 4px var(--ring); } }
+@media (prefers-reduced-motion: reduce) { .jar-svg.shaking, .jar-card.nudge { animation: none; } }
 .wish-list { display: grid; gap: 8px; }
 .wish { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; animation: rise .3s var(--ease) both; animation-delay: calc(min(var(--i), 10) * 35ms); }
 .wish p { font-size: 17px; line-height: 1.35; color: var(--title); overflow-wrap: anywhere; }
